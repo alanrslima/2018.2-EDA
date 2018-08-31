@@ -33,16 +33,18 @@ int main(int argc, char const *argv[])
 
 int *fneuronio(int *vet_entrada,int *vet_peso,int liminar,int max_entradas ){
 	int somaP = 0, aux = 0;
-	int response, *p;
+	int *response;
 	for (aux = 0; aux < max_entradas; aux++){
 		somaP = somaP + (*(vet_entrada + aux) * (*(vet_peso + aux)));
 	}
-	if (somaP > liminar){
-		response = 1;
-	}else{
-		response = 0;
+	response = (int *)malloc(sizeof(int));
+	if (response != 0){
+		if (somaP > liminar){
+			*response = 1;
+		}else{
+			*response = 0;
+		}
 	}
-	p = &response;
-	return p;
+	return response;
 }
 
