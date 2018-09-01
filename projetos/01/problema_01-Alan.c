@@ -28,6 +28,7 @@ int main(int argc, char const *argv[])
 	}else{
 		printf("Neurônio inibido!\n");
 	}
+	free(p);
 	return 0;
 }
 

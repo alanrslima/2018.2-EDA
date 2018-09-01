@@ -42,6 +42,9 @@ int main(int argc, char const *argv[])
 	}else{
 		printf("Menos da metade da turma foi aprovada\n");
 	}
+	free(vetor_apr);
+	free(situacao);
+	free(percentagem);
 	return 0;
 }
 
