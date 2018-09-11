@@ -1,38 +1,42 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-int get_quantidade(int qtd);
-void torre_hanoi(int origem, int destino, int aux, int qtd, int *contador);
+void torre_hanoi(int qtd_discos, char origem, char destino, char auxiliar, int *contador);
+int valida_qtd_discos(int qtd);
 
 int main(){
-	int qtd_discos, *contador;
+	int qtd_discos;
+	int *contador;
 	contador = (int *)malloc(sizeof(int));
-	qtd_discos = get_quantidade(qtd_discos);
+	if (contador == NULL){
+		exit(1);
+	}
+	printf("Digite a quantidade de discos: ");
+	scanf("\n%d", &qtd_discos);
+	qtd_discos = valida_qtd_discos(qtd_discos);
 	*contador = 0;
-	torre_hanoi(0, 2, 1, qtd_discos, contador);
-	printf("\nQuantidade de Discos: %d\n", qtd_discos);
-  printf("Nº minimo de movimentos: %d\n", *contador);
+	torre_hanoi(qtd_discos,'A', 'C', 'B', contador);
+	printf("\nQuantidade de movimentos = %d\n\n\n", *contador);
 	free(contador);
 	return 0;
 }
 
-int get_quantidade(int qtd){
-	printf("Digite a quantidade inicial de discos: ");
-	scanf("\n%d", &qtd);
+int valida_qtd_discos(int qtd){
 	while (qtd <= 0){
-		printf("Quantidade de discos inválida! Digite um número maior que 0: ");
+		printf("Digite um número maior que 0: ");
 		scanf("\n%d", &qtd);
 	}
 	return qtd;
 }
 
-void torre_hanoi(int origem, int destino, int auxiliar, int quantidade, int *contador){
-  if( quantidade == 1 ){
-    printf("Move de %d para %d\n", origem, destino);
-    *contador = *contador + 1;
-  }else{
-    torre_hanoi(origem, auxiliar, destino, quantidade-1, contador);
-    torre_hanoi(origem, destino, auxiliar, 1, contador);
-    torre_hanoi(auxiliar, destino, origem, quantidade-1, contador);
-  }
+void torre_hanoi(int qtd_discos, char origem, char destino, char auxiliar, int *contador){
+	if (qtd_discos == 1){
+		printf("Mover disco %d de %c para %c\n", qtd_discos, origem, destino);
+		*contador = *contador + 1;
+	}else{
+		torre_hanoi(qtd_discos-1, origem, auxiliar, destino, contador);
+		printf("Mover disco %d de %c para %c\n", qtd_discos, origem, destino);
+		*contador = *contador + 1;
+		torre_hanoi(qtd_discos-1, auxiliar, destino, origem, contador);
+	}
 }
