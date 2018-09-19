@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #define MAX 10
 
-int fneuronio(double *p1, double *p2, double limiarT, int max);
+int* fneuronio(double *p1, double *p2, double limiarT, int max);
 
 int main(){
   double entradas[MAX], pesos[MAX], limiarT, *p1, *p2;
@@ -38,10 +38,8 @@ int main(){
   printf("Digite o valor do limiar T: ");
   scanf("%lf", &limiarT);
   printf("\n");
-
-  fneuronio(p1, p2, limiarT, MAX); //chamando 2 vezes a funçao 
-
-  if(fneuronio(p1, p2, limiarT, MAX) == 1) //chamando 2 vezes a funçao
+  
+  if(*fneuronio(p1, p2, limiarT, MAX) == 1) //chamando 2 vezes a funçao
     printf("Neurônio ativado!\n");
   else
     printf("Neurôno inibido!\n");
@@ -49,7 +47,7 @@ int main(){
   return 0;
 }
 
-int fneuronio(double *p1, double *p2, double limiarT, int max)
+int* fneuronio(double *p1, double *p2, double limiarT, int max)
 {
   double vetor[max], SOMAP = 0;
   int i, excitada = 1, inibida = 0, *p3, *p4;
@@ -64,7 +62,7 @@ int fneuronio(double *p1, double *p2, double limiarT, int max)
   p4 = &inibida;
 
   if(SOMAP > limiarT)
-    return *p3;
+    return p3;
   else
-    return *p4;
+    return p4;
 }
