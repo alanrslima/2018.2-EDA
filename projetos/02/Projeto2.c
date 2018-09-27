@@ -3,16 +3,27 @@
 #include <stdbool.h>
 #include <time.h>
 
+/*
+
+Escreva todas as alocações dinamicas aqui para nao esquecer
+de dar um free ao final do programa --------
+
+FILE *fileAsphalt;
+int **matrizFile
+
+*/
+
 void GeraAleatorios(int *, int tamVet, int limite);
 bool Existe(int *, int tamVet, int valor);
 FILE *getAsphaltImage(FILE *,int random);
 void getQtdLinhasColunas(FILE *, int *linhas, int *colunas);
 
 int main(){
-  FILE *asphalt_images[25], *grass_images[25];
+  // FILE *asphalt_images[25], *grass	_images[25];
   int grass[25], asphalt[25];
 	int lin, col;
 	char nameFileAsphalt[25];;
+	int **matrizFile;
 
   GeraAleatorios(asphalt, 25, 50);
 
@@ -32,6 +43,25 @@ int main(){
 		getQtdLinhasColunas(fileAsphalt, &lin, &col);
 		// Volta para o inicio do arquivo
 		rewind(fileAsphalt);
+
+		// Aloca a matriz do arquivo de forma DINAMICA
+    matrizFile = (int**)malloc(lin*sizeof(int *));
+    for (i = 0; i < lin; i++) {
+      *(matrizFile+i) = (int*)malloc(col*sizeof(int));
+    }
+
+		// Aloca dinamicamente o vetor ILBP de 512 elementos tudo preenchido com 0.
+    ilbp = (int *) calloc(512, sizeof (int));
+
+    // Aloca dinamicamente o vetor metricas de 24 elementos tudo preenchido com 0.
+    metricas = (float *) calloc(24, sizeof (float));
+
+    // Aloca dinamicamente o vetor ilbp+glcm de 536 elementos tudo preenchido com 0.
+    ilbp_glcm = (float *) calloc(536, sizeof (float));
+
+    // Aloca dinamicamente o vetor ilbp+glcm normalizado de 536 elementos tudo preenchido com 0.
+    ilbp_glcm_normalizado = (float *) calloc(536, sizeof (float));
+
   }
 
 
