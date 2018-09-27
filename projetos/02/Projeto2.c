@@ -8,18 +8,19 @@ void doRandom(int *, int limite);
 // void GeraAleatorios(int *, int tamVet, int limite);
 // bool Invalido(int *, int tamVet, int valor);
 FILE *getAsphaltImage(FILE *,int random);
+FILE *getGrassImage(FILE *fp ,int id);
+
 void getQtdLinhasColunas(FILE *, int *linhas, int *colunas);
 void setMatrizFile(FILE *fp, int **matrizFile, int lin, int col);
 
 int main(){
   int grass[50], asphalt[50];
-  char marcador;
   int lin, col;
 	char nameFileAsphalt[25];
 	int **matrizFile;
 
   doRandom(asphalt, 50);
-
+  // Percorre arquivos asphalt
   for(int i=0; i<25; i++){
     printf("Arquivo número %d\n", i);
     FILE *fileAsphalt;
@@ -35,6 +36,7 @@ int main(){
     // Preenche matriz file com os dados do arquivo
     setMatrizFile(fileAsphalt, matrizFile, lin, col);
 
+    // Liberação de memória
     for (int j = 0; j < lin; j++) {
       free(*(matrizFile+j));
     }
@@ -42,9 +44,34 @@ int main(){
     fclose(fileAsphalt);
   }
 
+  doRandom(grass, 50);
+  // Percorre arquivos grass
+  for(int i=0; i<25; i++){
+    printf("Arquivo número %d\n", i);
+    FILE *fileGrass;
+		// Realiza a leitura de um arquivo
+		fileGrass = getGrassImage(fileGrass, grass[i]);
+    // Verifica a quantidade de linhas e colunas do arquivo
+		getQtdLinhasColunas(fileGrass, &lin, &col);
+		// Aloca a matriz do arquivo de forma DINAMICA
+    matrizFile = (int**)malloc(lin*sizeof(int *));
+    for (int j = 0; j < lin; j++) {
+      *(matrizFile+j) = (int*)malloc(col*sizeof(int));
+    }
+    // Preenche matriz file com os dados do arquivo
+    setMatrizFile(fileGrass, matrizFile, lin, col);
+
+    // Liberação de memória
+    for (int j = 0; j < lin; j++) {
+      free(*(matrizFile+j));
+    }
+    free(matrizFile);
+    fclose(fileGrass);
+  }
 
   return 0;
 }
+
 
 void setMatrizFile(FILE *fp, int **matrizFile, int lin, int col){
   char pv;
@@ -57,6 +84,7 @@ void setMatrizFile(FILE *fp, int **matrizFile, int lin, int col){
     }
   }
 }
+
 
 void getQtdLinhasColunas(FILE *fp, int *linhas, int *colunas){
 	char marcador;
@@ -72,12 +100,31 @@ void getQtdLinhasColunas(FILE *fp, int *linhas, int *colunas){
 	printf("Quantidade de linhas: %d, Quantidade de colunas: %d\n\n", *linhas, *colunas);
 }
 
+
 FILE *getAsphaltImage(FILE *fp ,int id){
   char asphalt[25];
   if(id < 10)
     sprintf(asphalt, "asphalt/asphalt_0%d.txt",id);
   else
     sprintf(asphalt, "asphalt/asphalt_%d.txt",id);
+
+  printf("Arquivo: %s\n", asphalt);
+  fp = fopen(asphalt ,"r");
+
+  if(fp==NULL){
+    printf("Falha.\n");
+    exit(1);
+  }
+  return fp;
+}
+
+
+FILE *getGrassImage(FILE *fp ,int id){
+  char asphalt[25];
+  if(id < 10)
+    sprintf(asphalt, "grass/grass_0%d.txt",id);
+  else
+    sprintf(asphalt, "grass/grass_%d.txt",id);
 
   printf("Arquivo: %s\n", asphalt);
   fp = fopen(asphalt ,"r");
@@ -116,13 +163,12 @@ FILE *getAsphaltImage(FILE *fp ,int id){
 //   }
 // }
 
-void doRandom(int *vet, int limite){
 
-  srand((unsigned)time(0)*100);
+void doRandom(int *vet, int limite){
+  srand(time(NULL));
   for (int i = 1; i < limite+1; i++) {
       vet[i-1] = i;
   }
-
   for (int i = 0; i < limite; i++) {
     int aux = vet[i];
     int random = rand() % limite;
