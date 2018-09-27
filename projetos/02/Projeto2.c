@@ -3,73 +3,62 @@
 #include <stdbool.h>
 #include <time.h>
 
-/*
 
-Escreva todas as alocações dinamicas aqui para nao esquecer
-de dar um free ao final do programa --------
-
-FILE *fileAsphalt;
-int **matrizFile
-
-*/
-
-void GeraAleatorios(int *, int tamVet, int limite);
-bool Existe(int *, int tamVet, int valor);
+void doRandom(int *, int limite);
+// void GeraAleatorios(int *, int tamVet, int limite);
+// bool Invalido(int *, int tamVet, int valor);
 FILE *getAsphaltImage(FILE *,int random);
 void getQtdLinhasColunas(FILE *, int *linhas, int *colunas);
+void setMatrizFile(FILE *fp, int **matrizFile, int lin, int col);
 
 int main(){
-  // FILE *asphalt_images[25], *grass	_images[25];
-  int grass[25], asphalt[25];
-	int lin, col;
-	char nameFileAsphalt[25];;
+  int grass[50], asphalt[50];
+  char marcador;
+  int lin, col;
+	char nameFileAsphalt[25];
 	int **matrizFile;
 
-  GeraAleatorios(asphalt, 25, 50);
-
-  printf("Ordem do vetor de asfalto: \n");
-  for(int i=0; i<25; i++){
-    printf("%d ", asphalt[i]);
-  }
-  printf("\n-----------------------\n");
+  doRandom(asphalt, 50);
 
   for(int i=0; i<25; i++){
     printf("Arquivo número %d\n", i);
     FILE *fileAsphalt;
-
 		// Realiza a leitura de um arquivo
-		fileAsphalt	= getAsphaltImage(fileAsphalt, asphalt[i]);
-		// Verifica a quantidade de linhas e colunas do arquivo
-		getQtdLinhasColunas(fileAsphalt, &lin, &col);
-		// Volta para o inicio do arquivo
-		rewind(fileAsphalt);
-
+		 fileAsphalt = getAsphaltImage(fileAsphalt, asphalt[i]);
+    // Verifica a quantidade de linhas e colunas do arquivo
+		 getQtdLinhasColunas(fileAsphalt, &lin, &col);
 		// Aloca a matriz do arquivo de forma DINAMICA
     matrizFile = (int**)malloc(lin*sizeof(int *));
-    for (i = 0; i < lin; i++) {
-      *(matrizFile+i) = (int*)malloc(col*sizeof(int));
+    for (int j = 0; j < lin; j++) {
+      *(matrizFile+j) = (int*)malloc(col*sizeof(int));
     }
+    // Preenche matriz file com os dados do arquivo
+    setMatrizFile(fileAsphalt, matrizFile, lin, col);
 
-		// Aloca dinamicamente o vetor ILBP de 512 elementos tudo preenchido com 0.
-    ilbp = (int *) calloc(512, sizeof (int));
-
-    // Aloca dinamicamente o vetor metricas de 24 elementos tudo preenchido com 0.
-    metricas = (float *) calloc(24, sizeof (float));
-
-    // Aloca dinamicamente o vetor ilbp+glcm de 536 elementos tudo preenchido com 0.
-    ilbp_glcm = (float *) calloc(536, sizeof (float));
-
-    // Aloca dinamicamente o vetor ilbp+glcm normalizado de 536 elementos tudo preenchido com 0.
-    ilbp_glcm_normalizado = (float *) calloc(536, sizeof (float));
-
+    for (int j = 0; j < lin; j++) {
+      free(*(matrizFile+j));
+    }
+    free(matrizFile);
+    fclose(fileAsphalt);
   }
 
 
   return 0;
 }
 
-void getQtdLinhasColunas(FILE *fp, int *linhas, int *colunas){
+void setMatrizFile(FILE *fp, int **matrizFile, int lin, int col){
+  char pv;
+  rewind(fp);
+  for (int i = 0; i < lin; i++) {
+    for (int j = 0; j < col; j++) {
+      if (!feof(fp)) {
+        fscanf(fp, "%d%c", *(matrizFile+i)+j, &pv);
+      }
+    }
+  }
+}
 
+void getQtdLinhasColunas(FILE *fp, int *linhas, int *colunas){
 	char marcador;
 	*linhas = 0, *colunas = 1;
 	while ((marcador = fgetc(fp)) != EOF) {
@@ -84,9 +73,7 @@ void getQtdLinhasColunas(FILE *fp, int *linhas, int *colunas){
 }
 
 FILE *getAsphaltImage(FILE *fp ,int id){
-
   char asphalt[25];
-
   if(id < 10)
     sprintf(asphalt, "asphalt/asphalt_0%d.txt",id);
   else
@@ -99,27 +86,54 @@ FILE *getAsphaltImage(FILE *fp ,int id){
     printf("Falha.\n");
     exit(1);
   }
-	return fp;
+  return fp;
 }
 
-bool Existe(int *vet, int tamVet, int valor)
-{
-  for(int i=0; i<tamVet; i++){
-    if(vet[i]==valor || vet[i]==0)
-      return true;
+// bool Invalido(int *vet, int tamVet, int valor)
+// {
+//   if (valor == 0){
+//     return true;
+//   }
+//   for(int i=0; i<tamVet; i++){
+//     if(vet[i]==valor)
+//       return true;
+//   }
+//   return false;
+// }
+//
+// void GeraAleatorios(int *vet, int tamVet, int limite)
+// {
+//   // srand(time(NULL));
+//   int random;
+//   for(int i=0; i<tamVet; i++){
+//     random = rand() % limite;
+//     printf("%d  ", random);
+//     while (Invalido(vet, i, random)) {
+//       random = rand() % limite;
+//     }
+//     printf("%d  ", random);
+//     vet[i] = random;
+//   }
+// }
+
+void doRandom(int *vet, int limite){
+
+  srand((unsigned)time(0)*100);
+  for (int i = 1; i < limite+1; i++) {
+      vet[i-1] = i;
   }
-  return false;
-}
 
-void GeraAleatorios(int *vet, int tamVet, int limite)
-{
-  // srand(time(NULL));
-  int random;
-  for(int i=0; i<tamVet; i++){
-    random = rand() % limite;
-    while (Existe(vet, i, random)) {
-      random = rand() % limite;
+  for (int i = 0; i < limite; i++) {
+    int aux = vet[i];
+    int random = rand() % limite;
+    if (random != 0) {
+      vet[i] = vet[random];
+      vet[random] = aux;
     }
-    vet[i] = random;
   }
+  printf("Ordem do vetor de asfalto: \n");
+  for(int i=0; i<limite; i++){
+    printf("%d ", vet[i]);
+  }
+  printf("\n-----------------------\n");
 }
