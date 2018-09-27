@@ -5,11 +5,14 @@
 
 void GeraAleatorios(int *, int tamVet, int limite);
 bool Existe(int *, int tamVet, int valor);
-void getAsphaltImage(FILE *,int random);
+FILE *getAsphaltImage(FILE *,int random);
+void getQtdLinhasColunas(FILE *, int *linhas, int *colunas);
 
 int main(){
   FILE *asphalt_images[25], *grass_images[25];
   int grass[25], asphalt[25];
+	int lin, col;
+	char nameFileAsphalt[25];;
 
   GeraAleatorios(asphalt, 25, 50);
 
@@ -19,19 +22,38 @@ int main(){
   }
   printf("\n-----------------------\n");
 
-  // for(int i=0; i<25; i++){
-    // print("Arquivo número %d", i);
+  for(int i=0; i<25; i++){
+    printf("Arquivo número %d\n", i);
+    FILE *fileAsphalt;
 
-      FILE *fileAsphalt;
-      getAsphaltImage(fileAsphalt, asphalt[0]);
-
-  // }
+		// Realiza a leitura de um arquivo
+		fileAsphalt	= getAsphaltImage(fileAsphalt, asphalt[i]);
+		// Verifica a quantidade de linhas e colunas do arquivo
+		getQtdLinhasColunas(fileAsphalt, &lin, &col);
+		// Volta para o inicio do arquivo
+		rewind(fileAsphalt);
+  }
 
 
   return 0;
 }
 
-void getAsphaltImage(FILE *fp ,int id){
+void getQtdLinhasColunas(FILE *fp, int *linhas, int *colunas){
+
+	char marcador;
+	*linhas = 0, *colunas = 1;
+	while ((marcador = fgetc(fp)) != EOF) {
+		if (marcador == '\n') {
+			*linhas = *linhas + 1;
+		}
+		else if (*linhas == 0 && marcador == ';') {
+			*colunas = *colunas + 1;
+		}
+	}
+	printf("Quantidade de linhas: %d, Quantidade de colunas: %d\n\n", *linhas, *colunas);
+}
+
+FILE *getAsphaltImage(FILE *fp ,int id){
 
   char asphalt[25];
 
@@ -47,6 +69,7 @@ void getAsphaltImage(FILE *fp ,int id){
     printf("Falha.\n");
     exit(1);
   }
+	return fp;
 }
 
 bool Existe(int *vet, int tamVet, int valor)
@@ -60,7 +83,7 @@ bool Existe(int *vet, int tamVet, int valor)
 
 void GeraAleatorios(int *vet, int tamVet, int limite)
 {
-  srand(time(NULL));
+  // srand(time(NULL));
   int random;
   for(int i=0; i<tamVet; i++){
     random = rand() % limite;
