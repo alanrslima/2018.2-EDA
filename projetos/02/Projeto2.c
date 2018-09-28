@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <time.h>
+#include <math.h>
 
 
 void doRandom(int *, int limite);
@@ -182,4 +183,37 @@ void doRandom(int *vet, int limite){
     printf("%d ", vet[i]);
   }
   printf("\n-----------------------\n");
+}
+
+//normalizando dados
+void dataNormalize(int *vet, int limite){
+  int menor = vet[0];
+  int maior = vet[0];
+  int vetorNormalizado[limite];
+
+  for (int i = 1; i < limite; i++) {
+    //calculando menor elemento do vetor
+    if(vet[i] < vet[i-1])
+      menor = vet[i];
+    //calculando maior elemento do vetor
+    if(vet[i] > vet[i-1])
+      maior = vet[i];
+    }
+
+  //criando vetor normalizado
+  for (int i = 0; i < limite; i++)
+    vetorNormalizado[i] = (vet[i] - menor) / (maior - menor);
+}
+
+void euclidianDistance(int *vetorNormalizado, int *vetorA, int *vetorB, int limite){
+  float distanciaA, distanciaB;
+  int somaA = 0, somaB = 0;
+
+  for (int i = 0; i < limite; i++) {
+    somaA += pow((vetorNormalizado[i] + vetorA[i]),2);
+    somaB += pow((vetorNormalizado[i] + vetorB[i]),2);
+  }
+
+  distanciaA = pow(somaA, 0.5);
+  distanciaB = pow(somaB, 0.5);
 }
