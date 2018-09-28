@@ -15,9 +15,10 @@ void setMatrizFile(FILE *fp, int **matrizFile, int lin, int col);
 
 int main(){
   int grass[50], asphalt[50];
-  int lin, col;
+  int lin, col, menor, decimal[9];
 	char nameFileAsphalt[25];
 	int **matrizFile;
+  char vetorBinario[9];
 
   doRandom(asphalt, 50);
   // Percorre arquivos asphalt
@@ -25,9 +26,9 @@ int main(){
     printf("Arquivo número %d\n", i);
     FILE *fileAsphalt;
 		// Realiza a leitura de um arquivo
-		 fileAsphalt = getAsphaltImage(fileAsphalt, asphalt[i]);
+		fileAsphalt = getAsphaltImage(fileAsphalt, asphalt[i]);
     // Verifica a quantidade de linhas e colunas do arquivo
-		 getQtdLinhasColunas(fileAsphalt, &lin, &col);
+		getQtdLinhasColunas(fileAsphalt, &lin, &col);
 		// Aloca a matriz do arquivo de forma DINAMICA
     matrizFile = (int**)malloc(lin*sizeof(int *));
     for (int j = 0; j < lin; j++) {
@@ -35,6 +36,16 @@ int main(){
     }
     // Preenche matriz file com os dados do arquivo
     setMatrizFile(fileAsphalt, matrizFile, lin, col);
+
+    // Cria vetor ILBP
+    // for (i = 1; i < lin - 1 ; i++) {
+    //   for (j = 1; j < col - 1 ; j++) {
+    //     monta_vetor_binario(matrizFile, i, j, vetorBinario);
+    //     menor = converte_binario_calcula_menor_decimal(vetorBinario, decimal);
+    //     ilbp[menor]++;
+    //   }
+    // }
+
 
     // Liberação de memória
     for (int j = 0; j < lin; j++) {
@@ -70,6 +81,55 @@ int main(){
   }
 
   return 0;
+}
+
+
+void monta_vetor_binario(int **matrizFile, int lin, int col, char *vetorbin) {
+  float soma = 0, media;
+  int i, j, x = 0, y = 0;
+  char **bin;
+
+  bin = (char**)malloc(3*sizeof(char *));
+  for (i = 0; i < 3; i++) {
+    *(bin + i) = (char*)malloc(3*sizeof(char));
+  }
+
+  for (i = lin - 1; i <= lin + 1; i++) {
+    for (j = col - 1; j <= col + 1; j++) {
+      soma += *(*(matrizFile+i)+j);
+    }
+  }
+
+  media = soma / 9.0;
+
+  for (i = lin - 1; i <= lin + 1; i++) {
+    for (j = col - 1; j <= col + 1; j++) {
+      if (*(*(matrizFile+i)+j) < media) {
+        *(*(bin+x)+y) = '0';
+      } else if (*(*(matrizFile+i)+j) >= media) {
+        *(*(bin+x)+y) = '1';
+      }
+      y++;
+    }
+    y = 0;
+    x++;
+  }
+  // Passa os elementos da matriz criada para o vetorbin na ordem solicitada pelo ILBP.
+  vetorbin[0] = *(*(bin+0)+0);
+  vetorbin[1] = *(*(bin+0)+1);
+  vetorbin[2] = *(*(bin+0)+2);
+  vetorbin[3] = *(*(bin+1)+2);
+  vetorbin[4] = *(*(bin+2)+2);
+  vetorbin[5] = *(*(bin+2)+1);
+  vetorbin[6] = *(*(bin+2)+0);
+  vetorbin[7] = *(*(bin+1)+0);
+  vetorbin[8] = *(*(bin+1)+1);
+
+  // Libera a memória alocada dinamicamente para a matriz de binários.
+  for (i = 0; i < 3; i++) {
+    free(*(bin+i));
+  }
+  free(bin);
 }
 
 
@@ -120,14 +180,14 @@ FILE *getAsphaltImage(FILE *fp ,int id){
 
 
 FILE *getGrassImage(FILE *fp ,int id){
-  char asphalt[25];
+  char grass[25];
   if(id < 10)
-    sprintf(asphalt, "grass/grass_0%d.txt",id);
+    sprintf(grass, "grass/grass_0%d.txt",id);
   else
-    sprintf(asphalt, "grass/grass_%d.txt",id);
+    sprintf(grass, "grass/grass_%d.txt",id);
 
-  printf("Arquivo: %s\n", asphalt);
-  fp = fopen(asphalt ,"r");
+  printf("Arquivo: %s\n", grass);
+  fp = fopen(grass ,"r");
 
   if(fp==NULL){
     printf("Falha.\n");
