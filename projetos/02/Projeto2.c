@@ -14,16 +14,26 @@ FILE *getGrassImage(FILE *fp ,int id);
 void getQtdLinhasColunas(FILE *, int *linhas, int *colunas);
 void setMatrizFile(FILE *fp, int **matrizFile, int lin, int col);
 
+void ILBP(int **matrizFile, int lin, int col, int *ilbp);
+void setVetorBinario(int **matrizFile, int lin, int col, char *vetorbin);
+int calculaMenorDecimal(char *bin);
+
+void euclidianDistance(int *vetorNormalizado, int *vetorA, int *vetorB, int limite);
+
+
+
 int main(){
   int grass[50], asphalt[50];
   int lin, col, menor, decimal[9];
 	char nameFileAsphalt[25];
 	int **matrizFile;
-  char vetorBinario[9];
+  int *ilbp;
+
 
   doRandom(asphalt, 50);
   // Percorre arquivos asphalt
-  for(int i=0; i<25; i++){
+  // for(int i=0; i<25; i++){
+    int i = 0;
     printf("Arquivo número %d\n", i);
     FILE *fileAsphalt;
 		// Realiza a leitura de um arquivo
@@ -38,54 +48,99 @@ int main(){
     // Preenche matriz file com os dados do arquivo
     setMatrizFile(fileAsphalt, matrizFile, lin, col);
 
+    ilbp = (int *)calloc(512, sizeof (int *));
+
     // Cria vetor ILBP
-    // for (i = 1; i < lin - 1 ; i++) {
-    //   for (j = 1; j < col - 1 ; j++) {
-    //     monta_vetor_binario(matrizFile, i, j, vetorBinario);
-    //     menor = converte_binario_calcula_menor_decimal(vetorBinario, decimal);
-    //     ilbp[menor]++;
-    //   }
-    // }
+    ILBP(matrizFile, lin, col, ilbp);
 
 
     // Liberação de memória
+    free(ilbp);
     for (int j = 0; j < lin; j++) {
       free(*(matrizFile+j));
     }
     free(matrizFile);
     fclose(fileAsphalt);
-  }
+  // }
 
-  doRandom(grass, 50);
-  // Percorre arquivos grass
-  for(int i=0; i<25; i++){
-    printf("Arquivo número %d\n", i);
-    FILE *fileGrass;
-		// Realiza a leitura de um arquivo
-		fileGrass = getGrassImage(fileGrass, grass[i]);
-    // Verifica a quantidade de linhas e colunas do arquivo
-		getQtdLinhasColunas(fileGrass, &lin, &col);
-		// Aloca a matriz do arquivo de forma DINAMICA
-    matrizFile = (int**)malloc(lin*sizeof(int *));
-    for (int j = 0; j < lin; j++) {
-      *(matrizFile+j) = (int*)malloc(col*sizeof(int));
-    }
-    // Preenche matriz file com os dados do arquivo
-    setMatrizFile(fileGrass, matrizFile, lin, col);
-
-    // Liberação de memória
-    for (int j = 0; j < lin; j++) {
-      free(*(matrizFile+j));
-    }
-    free(matrizFile);
-    fclose(fileGrass);
-  }
+  // doRandom(grass, 50);
+  // // Percorre arquivos grass
+  // for(int i=0; i<25; i++){
+  //   printf("Arquivo número %d\n", i);
+  //   FILE *fileGrass;
+	// 	// Realiza a leitura de um arquivo
+	// 	fileGrass = getGrassImage(fileGrass, grass[i]);
+  //   // Verifica a quantidade de linhas e colunas do arquivo
+	// 	getQtdLinhasColunas(fileGrass, &lin, &col);
+	// 	// Aloca a matriz do arquivo de forma DINAMICA
+  //   matrizFile = (int**)malloc(lin*sizeof(int *));
+  //   for (int j = 0; j < lin; j++) {
+  //     *(matrizFile+j) = (int*)malloc(col*sizeof(int));
+  //   }
+  //   // Preenche matriz file com os dados do arquivo
+  //   setMatrizFile(fileGrass, matrizFile, lin, col);
+  //
+  //   // Liberação de memória
+  //   for (int j = 0; j < lin; j++) {
+  //     free(*(matrizFile+j));
+  //   }
+  //   free(matrizFile);
+  //   fclose(fileGrass);
+  // }
 
   return 0;
 }
 
+void ILBP(int **matrizFile, int lin, int col, int *ilbp){
 
-void monta_vetor_binario(int **matrizFile, int lin, int col, char *vetorbin) {
+  char vetorBinario[9];
+  int menorDecimal;
+
+  for (int i = 1; i < lin - 1 ; i++) {
+    for (int j = 1; j < col - 1 ; j++) {
+      setVetorBinario(matrizFile, i, j, vetorBinario);
+      menorDecimal = calculaMenorDecimal(vetorBinario);
+      ilbp[menorDecimal]++;
+    }
+  }
+}
+
+int calculaMenorDecimal(char *bin) {
+
+  int decimal, m = 0, menorNumero = 512;
+  char aux;
+  int dec[9];
+
+  for (int q = 9; q > 0; q--) {
+    decimal = 0;
+    int j = 0;
+    for (int i = 8; i >= 0; i--) {
+      if (*(bin + i) == '1') {
+        decimal += pow(2, j);
+      }
+      j++;
+    }
+    // Rotacao de 1 bit do vetor bin
+    aux = bin[8];
+    for (int c = 8; c > 0; c--) {
+      bin[c] = bin[c - 1];
+    }
+    bin[0] = aux;
+
+    dec[m] = decimal;
+    m++;
+  }
+
+  for (int i = 0; i < 9; i++) {
+    if (menorNumero > dec[i]) {
+      menorNumero = dec[i];
+    }
+  }
+  return menorNumero;
+}
+
+
+void setVetorBinario(int **matrizFile, int lin, int col, char *vetorbin) {
   float soma = 0, media;
   int i, j, x = 0, y = 0;
   char **bin;
@@ -126,7 +181,6 @@ void monta_vetor_binario(int **matrizFile, int lin, int col, char *vetorbin) {
   vetorbin[7] = *(*(bin+1)+0);
   vetorbin[8] = *(*(bin+1)+1);
 
-  // Libera a memória alocada dinamicamente para a matriz de binários.
   for (i = 0; i < 3; i++) {
     free(*(bin+i));
   }
@@ -270,10 +324,10 @@ void euclidianDistance(int *vetorNormalizado, int *vetorA, int *vetorB, int limi
   int somaA = 0, somaB = 0;
 
   for (int i = 0; i < limite; i++) {
-    somaA += pow((vetorNormalizado[i] + vetorA[i]),2);
-    somaB += pow((vetorNormalizado[i] + vetorB[i]),2);
+    somaA += (pow((vetorNormalizado[i] + vetorA[i]),2));
+    somaB += (pow((vetorNormalizado[i] + vetorB[i]),2));
   }
 
-  distanciaA = pow(somaA, 0.5);
-  distanciaB = pow(somaB, 0.5);
+  distanciaA = (pow(somaA, 0.5));
+  distanciaB = (pow(somaB, 0.5));
 }
