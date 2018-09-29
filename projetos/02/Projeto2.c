@@ -4,92 +4,99 @@
 #include <time.h>
 #include <math.h>
 
-
+/* Seta valores randomicos dentro de um vetor com tamanho e maior número possivel estabelicidos pela parametro limite*/
 void doRandom(int *, int limite);
-// void GeraAleatorios(int *, int tamVet, int limite);
-// bool Invalido(int *, int tamVet, int valor);
-FILE *getAsphaltImage(FILE *,int random);
+
+/* Retorna um ponteiro para uma imagem de asfalto com base em um numero de 1 a 50 ṕara identificação*/
+FILE *getAsphaltImage(FILE *,int id);
+
+/* Retorna um ponteiro para uma imagem de grama com base em um numero de 1 a 50 ṕara identificação*/
 FILE *getGrassImage(FILE *fp ,int id);
 
+/* Busca a quantidade de linhas e colunas de um arquivo .txt referentes as imagens */
 void getQtdLinhasColunas(FILE *, int *linhas, int *colunas);
+
+/* Preenche uma matriz auxiliar com os dados do arquivo de imagem */
 void setMatrizFile(FILE *fp, int **matrizFile, int lin, int col);
 
+/* Cria o vetor ILBP */
 void ILBP(int **matrizFile, int lin, int col, int *ilbp);
+
+/* Cria o vetor GLCM */
+void GLCM(int **mat, int lin, int col, float *metricas);
+
+/* Cria o vetor de de binarios com base em uma matriz 3x3 extraida da matriz referente a imagem */
 void setVetorBinario(int **matrizFile, int lin, int col, char *vetorbin);
+
+/* Calcula o menor decimal possivel referente ao vetor de binarios provindos do */
 int calculaMenorDecimal(char *bin);
 
+/* Calcula a distancia euclidiana */
 void euclidianDistance(int *vetorNormalizado, int *vetorA, int *vetorB, int limite);
 
+/* Faz a normalizacao do vetor */
+void dataNormalize(int *vet, int limite);
+
+/* Concatena os vetores ilbp e glcm, formando um vetor unico de 536 posicoes*/
+void concatenaIlbpGlcm(int *ilbpGlcm, int *ilbp, int *glcm);
 
 
 int main(){
   int grass[50], asphalt[50];
-  int lin, col, menor, decimal[9];
-	char nameFileAsphalt[25];
-	int **matrizFile;
-  int *ilbp;
-
+  int lin, col, aux;
+	int **matrizFile, *ilbp;
+  float *glcm, *ilbpGlcm, *ilbpGlcmNormalizado;
 
   doRandom(asphalt, 50);
+  // Contador para as posicoes do vetor de resultados do asphalt
+  aux = 0;
   // Percorre arquivos asphalt
-  // for(int i=0; i<25; i++){
-    int i = 0;
+  for(int i=0; i<25; i++){
     printf("Arquivo número %d\n", i);
     FILE *fileAsphalt;
-		// Realiza a leitura de um arquivo
+	
 		fileAsphalt = getAsphaltImage(fileAsphalt, asphalt[i]);
-    // Verifica a quantidade de linhas e colunas do arquivo
 		getQtdLinhasColunas(fileAsphalt, &lin, &col);
-		// Aloca a matriz do arquivo de forma DINAMICA
+
     matrizFile = (int**)malloc(lin*sizeof(int *));
     for (int j = 0; j < lin; j++) {
       *(matrizFile+j) = (int*)malloc(col*sizeof(int));
     }
-    // Preenche matriz file com os dados do arquivo
+
     setMatrizFile(fileAsphalt, matrizFile, lin, col);
 
+    // Alocacao dinamica para vetores de ilbp, glcm, ilbpGlcm e ilbpGlcmNormalizado
     ilbp = (int *)calloc(512, sizeof (int *));
+    glcm = (float *) calloc(24, sizeof (float));
+    ilbpGlcm = (float *) calloc(536, sizeof (float));
+    ilbpGlcmNormalizado = (float *) calloc(536, sizeof (float));
 
-    // Cria vetor ILBP
     ILBP(matrizFile, lin, col, ilbp);
-
 
     // Liberação de memória
     free(ilbp);
+    free(glcm);
+    free(ilbpGlcm);
+    free(ilbpGlcmNormalizado);
     for (int j = 0; j < lin; j++) {
       free(*(matrizFile+j));
     }
     free(matrizFile);
     fclose(fileAsphalt);
-  // }
-
-  // doRandom(grass, 50);
-  // // Percorre arquivos grass
-  // for(int i=0; i<25; i++){
-  //   printf("Arquivo número %d\n", i);
-  //   FILE *fileGrass;
-	// 	// Realiza a leitura de um arquivo
-	// 	fileGrass = getGrassImage(fileGrass, grass[i]);
-  //   // Verifica a quantidade de linhas e colunas do arquivo
-	// 	getQtdLinhasColunas(fileGrass, &lin, &col);
-	// 	// Aloca a matriz do arquivo de forma DINAMICA
-  //   matrizFile = (int**)malloc(lin*sizeof(int *));
-  //   for (int j = 0; j < lin; j++) {
-  //     *(matrizFile+j) = (int*)malloc(col*sizeof(int));
-  //   }
-  //   // Preenche matriz file com os dados do arquivo
-  //   setMatrizFile(fileGrass, matrizFile, lin, col);
-  //
-  //   // Liberação de memória
-  //   for (int j = 0; j < lin; j++) {
-  //     free(*(matrizFile+j));
-  //   }
-  //   free(matrizFile);
-  //   fclose(fileGrass);
-  // }
+  }
 
   return 0;
 }
+
+void concatenaIlbpGlcm(int *ilbpGlcm, int *ilbp, int *glcm){
+  for (int j = 0; j < 512; j++) {
+      *(ilbpGlcm + j) = *(ilbp + j);
+  }
+    for (int j = 512; j < 536; j++) {
+      *(ilbpGlcm + j) = *(glcm + (j - 512));
+  }
+}
+
 
 void ILBP(int **matrizFile, int lin, int col, int *ilbp){
 
@@ -104,6 +111,7 @@ void ILBP(int **matrizFile, int lin, int col, int *ilbp){
     }
   }
 }
+
 
 int calculaMenorDecimal(char *bin) {
 
@@ -120,7 +128,7 @@ int calculaMenorDecimal(char *bin) {
       }
       j++;
     }
-    // Rotacao de 1 bit do vetor bin
+    // Shift de 1 bit do vetor bin
     aux = bin[8];
     for (int c = 8; c > 0; c--) {
       bin[c] = bin[c - 1];
@@ -130,7 +138,7 @@ int calculaMenorDecimal(char *bin) {
     dec[m] = decimal;
     m++;
   }
-
+  // Encontra o menor numero possivel
   for (int i = 0; i < 9; i++) {
     if (menorNumero > dec[i]) {
       menorNumero = dec[i];
@@ -170,7 +178,6 @@ void setVetorBinario(int **matrizFile, int lin, int col, char *vetorbin) {
     y = 0;
     x++;
   }
-  // Passa os elementos da matriz criada para o vetorbin na ordem solicitada pelo ILBP.
   vetorbin[0] = *(*(bin+0)+0);
   vetorbin[1] = *(*(bin+0)+1);
   vetorbin[2] = *(*(bin+0)+2);
@@ -251,33 +258,6 @@ FILE *getGrassImage(FILE *fp ,int id){
   return fp;
 }
 
-// bool Invalido(int *vet, int tamVet, int valor)
-// {
-//   if (valor == 0){
-//     return true;
-//   }
-//   for(int i=0; i<tamVet; i++){
-//     if(vet[i]==valor)
-//       return true;
-//   }
-//   return false;
-// }
-//
-// void GeraAleatorios(int *vet, int tamVet, int limite)
-// {
-//   // srand(time(NULL));
-//   int random;
-//   for(int i=0; i<tamVet; i++){
-//     random = rand() % limite;
-//     printf("%d  ", random);
-//     while (Invalido(vet, i, random)) {
-//       random = rand() % limite;
-//     }
-//     printf("%d  ", random);
-//     vet[i] = random;
-//   }
-// }
-
 
 void doRandom(int *vet, int limite){
   srand(time(NULL));
@@ -299,7 +279,7 @@ void doRandom(int *vet, int limite){
   printf("\n-----------------------\n");
 }
 
-//normalizando dados
+
 void dataNormalize(int *vet, int limite){
   int menor = vet[0];
   int maior = vet[0];
