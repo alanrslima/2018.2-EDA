@@ -4,6 +4,7 @@
 #include <time.h>
 #include <math.h>
 
+
 /* Seta valores randomicos dentro de um vetor com tamanho e maior número possivel estabelicidos pela parametro limite*/
 void doRandom(int *, int limite);
 
@@ -23,7 +24,22 @@ void setMatrizFile(FILE *fp, int **matrizFile, int lin, int col);
 void ILBP(int **matrizFile, int lin, int col, int *ilbp);
 
 /* Cria o vetor GLCM */
-void GLCM(int **mat, int lin, int col, float *metricas);
+// void GLCM(int **matriz,int linha,int coluna,double **caracteristicas,int cont);
+
+/* Cria o vetor GLCM */
+void GLCM(int **matrizFile, int lin, int col, float *metricas);
+
+/* Calcula as metricas de cada posicao relativa do GLCM*/
+void calculaMetricas(int **glcm, float *metricas, int initialPosition, int linhaColuna);
+
+/* Calcula a metrica de contraste */
+double calculaContraste(int **matriz, int linhaColuna);
+
+/* Calcula a metrica de homogeneidade */
+double calculaHomogeneidade(int **matriz, int linhaColuna);
+
+/* Calcula a metrica de energia */
+double calculaEnergia(int **matriz, int linhaColuna);
 
 /* Cria o vetor de de binarios com base em uma matriz 3x3 extraida da matriz referente a imagem */
 void setVetorBinario(int **matrizFile, int lin, int col, char *vetorbin);
@@ -35,34 +51,45 @@ int calculaMenorDecimal(char *bin);
 void euclidianDistance(int *vetorNormalizado, int *vetorA, int *vetorB, int limite);
 
 /* Faz a normalizacao do vetor */
-void dataNormalize(int *vet, int limite);
+void dataNormalize(float *vet, float *vetNormalizado, int limite);
 
 /* Concatena os vetores ilbp e glcm, formando um vetor unico de 536 posicoes*/
-void concatenaIlbpGlcm(int *ilbpGlcm, int *ilbp, int *glcm);
+void concatenaIlbpGlcm(float *ilbpGlcm, int *ilbp, float *glcm);
+
+/* Calcula a um vetor media de treinamento a partir da matriz de resulotados*/
+void calculaMediaTreinamento(float **matTreinamento, float *vetMedia);
+
+/* Preenche a matriz de resultado a partir de vetores normalizados */
+void setResultado(float **matResultado, float *vetNormalizado, int *contador);
+
+
 
 
 int main(){
   int grass[50], asphalt[50];
   int lin, col, aux;
 	int **matrizFile, *ilbp;
-  float *glcm, *ilbpGlcm, *ilbpGlcmNormalizado;
+  float *glcm, *ilbpGlcm, *ilbpGlcmNormalizado, *mediaGrama, *mediaAsfalto;
+  float **resultadoGrama, **resultadoAsfalto, **treinamentoResultadoGrama, **treinamentoResultoAsfalto;
 
+  // Tratamento de imagens de asfalto
+  resultadoAsfalto = (float **)malloc(50*sizeof(float *));
+  for (int i=0; i<50; i++){
+    *(resultadoAsfalto+i) = (float *)malloc(536*sizeof(float));
+  }
   doRandom(asphalt, 50);
   // Contador para as posicoes do vetor de resultados do asphalt
   aux = 0;
   // Percorre arquivos asphalt
-  for(int i=0; i<25; i++){
+  for(int i=0; i<50; i++){
     printf("Arquivo número %d\n", i);
     FILE *fileAsphalt;
-	
 		fileAsphalt = getAsphaltImage(fileAsphalt, asphalt[i]);
 		getQtdLinhasColunas(fileAsphalt, &lin, &col);
-
     matrizFile = (int**)malloc(lin*sizeof(int *));
     for (int j = 0; j < lin; j++) {
       *(matrizFile+j) = (int*)malloc(col*sizeof(int));
     }
-
     setMatrizFile(fileAsphalt, matrizFile, lin, col);
 
     // Alocacao dinamica para vetores de ilbp, glcm, ilbpGlcm e ilbpGlcmNormalizado
@@ -72,6 +99,10 @@ int main(){
     ilbpGlcmNormalizado = (float *) calloc(536, sizeof (float));
 
     ILBP(matrizFile, lin, col, ilbp);
+    GLCM(matrizFile, lin, col, glcm);
+    concatenaIlbpGlcm(ilbpGlcm, ilbp, glcm);
+    dataNormalize(ilbpGlcm, ilbpGlcmNormalizado, 536);
+    setResultado(resultadoAsfalto, ilbpGlcmNormalizado, &aux);
 
     // Liberação de memória
     free(ilbp);
@@ -85,10 +116,80 @@ int main(){
     fclose(fileAsphalt);
   }
 
+  // Tratamento de imagens de grama
+  resultadoGrama = (float **)malloc(50*sizeof(float *));
+  for (int i=0; i<50; i++){
+    *(resultadoGrama+i) = (float *)malloc(536*sizeof(float));
+  }
+  doRandom(grass, 50);
+  // Contador para as posicoes do vetor de resultados do asphalt
+  aux = 0;
+  // Percorre arquivos asphalt
+  for(int i=0; i<50; i++){
+    printf("Arquivo número %d\n", i);
+    FILE *fileGrass;
+		fileGrass = getGrassImage(fileGrass, grass[i]);
+		getQtdLinhasColunas(fileGrass, &lin, &col);
+    matrizFile = (int**)malloc(lin*sizeof(int *));
+    for (int j = 0; j < lin; j++) {
+      *(matrizFile+j) = (int*)malloc(col*sizeof(int));
+    }
+    setMatrizFile(fileGrass, matrizFile, lin, col);
+
+    // Alocacao dinamica para vetores de ilbp, glcm, ilbpGlcm e ilbpGlcmNormalizado
+    ilbp = (int *)calloc(512, sizeof (int *));
+    glcm = (float *) calloc(24, sizeof (float));
+    ilbpGlcm = (float *) calloc(536, sizeof (float));
+    ilbpGlcmNormalizado = (float *) calloc(536, sizeof (float));
+
+    ILBP(matrizFile, lin, col, ilbp);
+    GLCM(matrizFile, lin, col, glcm);
+    concatenaIlbpGlcm(ilbpGlcm, ilbp, glcm);
+    dataNormalize(ilbpGlcm, ilbpGlcmNormalizado, 536);
+    setResultado(resultadoGrama, ilbpGlcmNormalizado, &aux);
+
+    // Liberação de memória
+    free(ilbp);
+    free(glcm);
+    free(ilbpGlcm);
+    free(ilbpGlcmNormalizado);
+    for (int j = 0; j < lin; j++) {
+      free(*(matrizFile+j));
+    }
+    free(matrizFile);
+    fclose(fileGrass);
+  }
+
+  mediaGrama = (float *) calloc(536, sizeof (float));
+  mediaAsfalto = (float *) calloc(536, sizeof (float));
+  calculaMediaTreinamento(resultadoGrama, mediaGrama);
+  calculaMediaTreinamento(resultadoAsfalto, mediaAsfalto);
+
+  free(mediaGrama);
+  free(mediaAsfalto);
+
   return 0;
 }
 
-void concatenaIlbpGlcm(int *ilbpGlcm, int *ilbp, int *glcm){
+void calculaMediaTreinamento(float **matTreinamento, float *vetMedia){
+  for (int i = 0; i < 536; i++) {
+    for (int j = 0; j < 25; j++) {
+      vetMedia[i] += matTreinamento[j][i];
+    }
+    vetMedia[i] = vetMedia[i] / 25.0;
+  }
+}
+
+
+void setResultado(float **matResultado, float *vetNormalizado, int *contador){
+  for(int i=0; i < 536; i++){
+    *(*(matResultado+(*contador))+i) = *(vetNormalizado+i);
+  }
+  contador++;
+}
+
+
+void concatenaIlbpGlcm(float *ilbpGlcm, int *ilbp, float *glcm){
   for (int j = 0; j < 512; j++) {
       *(ilbpGlcm + j) = *(ilbp + j);
   }
@@ -280,24 +381,23 @@ void doRandom(int *vet, int limite){
 }
 
 
-void dataNormalize(int *vet, int limite){
-  int menor = vet[0];
-  int maior = vet[0];
-  int vetorNormalizado[limite];
+void dataNormalize(float *vet, float *vetNormalizado, int limite){
+  float menor = 9999999, maior = 0;
 
-  for (int i = 1; i < limite; i++) {
+  for (int i = 0; i < limite; i++) {
     //calculando menor elemento do vetor
-    if(vet[i] < vet[i-1])
+    if(vet[i] < menor)
       menor = vet[i];
     //calculando maior elemento do vetor
-    if(vet[i] > vet[i-1])
+    if(vet[i] > maior)
       maior = vet[i];
-    }
+  }
 
   //criando vetor normalizado
   for (int i = 0; i < limite; i++)
-    vetorNormalizado[i] = (vet[i] - menor) / (maior - menor);
+    vetNormalizado[i] = (vet[i] - menor) / (maior - menor);
 }
+
 
 void euclidianDistance(int *vetorNormalizado, int *vetorA, int *vetorB, int limite){
   float distanciaA, distanciaB;
@@ -310,4 +410,200 @@ void euclidianDistance(int *vetorNormalizado, int *vetorA, int *vetorB, int limi
 
   distanciaA = (pow(somaA, 0.5));
   distanciaB = (pow(somaB, 0.5));
+}
+
+
+// void GLCM(int **matriz,int linha,int coluna,double **caracteristicas,int cont){
+//   int ***matrizesGlcm;
+//   int i,j,t;
+//   int TAMCOD = 256;
+//
+//   if(matrizesGlcm = (int***)calloc(8,sizeof(int**)),matrizesGlcm == NULL){
+//     printf("alocação falhou!\n");
+//   }
+// 	for (i = 0; i < 8; i++) {
+// 	    if(matrizesGlcm[i] = (int**)calloc(TAMCOD,sizeof(int*)),matrizesGlcm[i] == NULL){
+// 	      printf("alocação falhou!\n");
+// 	    }
+// 		for (j = 0; j < TAMCOD; j++) {
+//       		if(matrizesGlcm[i][j] = (int*)calloc(TAMCOD,sizeof(int)),matrizesGlcm[i][j] == NULL){
+//         	printf("alocação falhou!\n");
+//       		}
+// 		}
+// 	}
+//
+//
+//   for (t = 0; t < 8; t++) {
+//     for (i = 1; i < linha-1; i++) {
+//       for (j = 1; j < coluna-1; j++) {
+//         switch (t) {
+//           case 0:
+//             matrizesGlcm[t][matriz[i][j]][matriz[i-1][j-1]]++;
+//             break;
+//           case 1:
+//             matrizesGlcm[t][matriz[i][j]][matriz[i-1][j]]++;
+//             break;
+//           case 2:
+//             matrizesGlcm[t][matriz[i][j]][matriz[i-1][j+1]]++;
+//             break;
+//           case 3:
+//             matrizesGlcm[t][matriz[i][j]][matriz[i][j-1]]++;
+//             break;
+//           case 4:
+//             matrizesGlcm[t][matriz[i][j]][matriz[i][j+1]]++;
+//             break;
+//           case 5:
+//             matrizesGlcm[t][matriz[i][j]][matriz[i+1][j-1]]++;
+//             break;
+//           case 6:
+//             matrizesGlcm[t][matriz[i][j]][matriz[i+1][j]]++;
+//             break;
+//           case 7:
+//             matrizesGlcm[t][matriz[i][j]][matriz[i+1][j+1]]++;
+//         }
+//       }
+//     }
+//     if (cont%2) {
+//       caracteristicas[(cont-1)/2][512+3*t] = calculaEnergia(matrizesGlcm[t]);
+//       caracteristicas[(cont-1)/2][512+3*t+1] = calculaHomogeneidade(matrizesGlcm[t]);
+//       caracteristicas[(cont-1)/2][512+3*t+2] = calculaContraste(matrizesGlcm[t]);
+//     } else {
+//       caracteristicas[IMAGENS/2+cont/2][512+3*t] = calculaEnergia(matrizesGlcm[t]);
+//       caracteristicas[IMAGENS/2+cont/2][512+3*t+1] = calculaHomogeneidade(matrizesGlcm[t]);
+//       caracteristicas[IMAGENS/2+cont/2][512+3*t+2] = calculaContraste(matrizesGlcm[t]);
+//     }
+//   }
+//
+//   for (i = 0; i < 8; i++) {
+//     for (j = 0; j < TAMCOD; j++) {
+//       free(matrizesGlcm[i][j]);
+//     }
+//     free(matrizesGlcm[i]);
+//   }
+//   free(matrizesGlcm);
+//
+// }
+
+
+void calculaMetricas(int **glcm, float *metricas, int initialPosition, int linhaColuna){
+  *(metricas + initialPosition) = calculaContraste(glcm, linhaColuna);
+  *(metricas + (initialPosition + 1)) = calculaEnergia(glcm, linhaColuna);
+  *(metricas + (initialPosition + 2)) = calculaHomogeneidade(glcm, linhaColuna);
+}
+
+
+void GLCM(int **matrizFile, int lin, int col, float *metricas) {
+	int **glcm, GLCM_LINHA_COLUNA = 512;
+	for (int k = 0; k < 8; k++) {
+	// Aloca uma matriz 512x512 para o glcm
+  	glcm = (int**)calloc(GLCM_LINHA_COLUNA, sizeof(int *));
+  	 for (int i = 0; i < GLCM_LINHA_COLUNA; i++) {
+  	   *(glcm+i) = (int*)calloc(GLCM_LINHA_COLUNA, sizeof(int));
+  	 }
+   if (k == 0) {
+	 // Incrementa a posição [elemento][elemento vizinho da direita] da matriz glcm.
+     for (int i = 0; i < lin; i++) {
+       for (int j = 0; j < col - 1; j++) {
+         glcm[matrizFile[i][j]][matrizFile[i][j+1]]++;
+		   }
+	   }
+	   calculaMetricas(glcm, metricas, 0, GLCM_LINHA_COLUNA);
+    } else if (k == 1) {
+	      // Incrementa a posição [elemento][elemento vizinho da esquerda] da matriz glcm.
+        for (int i = 0; i < lin; i++) {
+	        for (int j = 1; j < col; j++) {
+	        	glcm[matrizFile[i][j]][matrizFile[i][j-1]]++;
+	    		}
+	    	}
+	      calculaMetricas(glcm, metricas, 3, GLCM_LINHA_COLUNA);
+	    } else if (k == 2) {
+	     // Incrementa a posição [elemento][elemento vizinho de cima] da matriz glcm.
+        for (int i = 1; i < lin; i++) {
+          for (int j = 0; j < col; j++) {
+		         glcm[matrizFile[i][j]][matrizFile[i-1][j]]++;
+		        }
+		    }
+	      	calculaMetricas(glcm, metricas, 6, GLCM_LINHA_COLUNA);
+	    } else if (k == 3) {
+	      // Incrementa a posição [elemento][elemento vizinho de baixo] da matriz glcm.
+	    	for (int i = 0; i < lin - 1; i++) {
+	        	for (int j = 0; j < col; j++) {
+	          		glcm[matrizFile[i][j]][matrizFile[i+1][j]]++;
+	        	}
+	    	}
+	      	calculaMetricas(glcm, metricas, 9, GLCM_LINHA_COLUNA);
+	    } else if (k == 4) {
+
+	      // Incrementa a posição [elemento][elemento vizinho da diagonal de cima da esquerda] da matriz glcm.
+	    	for (int i = 1; i < lin; i++) {
+	    		for (int j = 1; j < col; j++) {
+	          		glcm[matrizFile[i][j]][matrizFile[i-1][j-1]]++;
+	       		}
+	      	}
+	      	calculaMetricas(glcm, metricas, 12, GLCM_LINHA_COLUNA);
+	    } else if (k == 5) {
+
+	      // Incrementa a posição [elemento][elemento vizinho da diagonal de cima da direita] da matriz glcm.
+	      	for (int i = 1; i < lin; i++) {
+	        	for (int j = 0; j < col - 1; j++) {
+	          		glcm[matrizFile[i][j]][matrizFile[i-1][j+1]]++;
+	        	}
+	      	}
+	      	calculaMetricas(glcm, metricas, 15, GLCM_LINHA_COLUNA);
+	    } else if (k == 6) {
+	      // Incrementa a posição [elemento][elemento vizinho da diagonal de baixo da esquerda] da matriz glcm.
+	      	for (int i = 0; i < lin - 1; i++) {
+	        	for (int j = 1; j < col; j++) {
+	         		glcm[matrizFile[i][j]][matrizFile[i+1][j-1]]++;
+	        	}
+	      	}
+	      	calculaMetricas(glcm, metricas, 18, GLCM_LINHA_COLUNA);
+	    } else if (k == 7) {
+	      // Incrementa a posição [elemento][elemento vizinho da diagonal de baixo da direita] da matriz glcm.
+	      for (int i = 0; i < lin - 1; i++) {
+	        	for (int j = 0; j < col - 1; j++) {
+	          		glcm[matrizFile[i][j]][matrizFile[i+1][j+1]]++;
+	        	}
+	      	}
+	     	calculaMetricas(glcm, metricas, 21, GLCM_LINHA_COLUNA);
+	    }
+	    // Libera a memória utilizada pela matriz GLCM.
+	    for (int i = 0; i < GLCM_LINHA_COLUNA; i++) {
+	      	free(*(glcm+i));
+	    }
+	    free(glcm);
+  	}
+}
+
+
+double calculaContraste(int **matriz, int linhaColuna){
+  double total=0.0;
+  for (int i = 0; i < linhaColuna; i++) {
+    for (int j = 0; j < linhaColuna; j++) {
+      total += matriz[i][j]*pow(i-j,2);
+    }
+  }
+  return total;
+}
+
+
+double calculaHomogeneidade(int **matriz, int linhaColuna){
+  double total=0.0;
+  for (int i = 0; i < linhaColuna; i++) {
+    for (int j = 0; j < linhaColuna; j++) {
+      total += matriz[i][j]/(1+abs(i-j));
+    }
+  }
+  return total;
+}
+
+
+double calculaEnergia(int **matriz, int linhaColuna){
+  double total=0.0;
+  for (int i = 0; i < linhaColuna; i++) {
+    for (int j = 0; j < linhaColuna; j++) {
+      total += pow(matriz[i][j],2);
+    }
+  }
+  return total;
 }
