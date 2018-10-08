@@ -1,10 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
-struct PONTO (
+struct PONTO {
   double x;
   double y;
-);
+};
 
 typedef struct PONTO Ponto;
 
@@ -40,7 +41,7 @@ void liberaPonto(Ponto *p){
 
 
 double calcDistancia(Ponto *p1, Ponto *p2){
-  return pow(pow(p2->x - p1->x, 2) + pow(p2->y - p1->x, 2)),0.5);
+  return pow(pow(p2->x - p1->x, 2) + pow(p2->y - p1->x, 2),0.5);
 }
 
 void imprimePonto(Ponto *p){
@@ -51,7 +52,7 @@ Ponto *criaPonto(){
   Ponto *p;
   p = (Ponto *) malloc(sizeof(Ponto));
   if (p == NULL){
-    printf("Deu ruim na alocação de um ponto\n", );
+    printf("Deu ruim na alocação de um ponto\n" );
     exit(1);
   }
   return p;
