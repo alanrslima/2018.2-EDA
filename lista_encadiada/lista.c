@@ -21,8 +21,8 @@ Lista *buscaElemento(Lista *, int);
 {
     Lista *lista;
     Lista *temp;
-     lista = criaListaVazia();
-     lista = insereInicio(lista, criaElemento(1));
+    lista = criaListaVazia();
+    lista = insereInicio(lista, criaElemento(1));
     lista = insereInicio(lista, criaElemento(2));
     lista = insereInicio(lista, criaElemento(3));
      insereLista(lista, criaElemento(15), 2);
@@ -98,4 +98,4 @@ Lista *buscaElemento(Lista *, int);
         }
     }
     return e;
-} 
+}
