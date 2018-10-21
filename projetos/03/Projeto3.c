@@ -14,8 +14,9 @@ struct contato {
 typedef struct contato Contato;
 
 Contato *criaListaVazia();
-void abreArquivo(Contato *lista);
+Contato *abreArquivo();
 Contato *insereInicioLista(Contato *lista, Contato *contato);
+void imprimir_contatos(Contato *lista);
 
 
 int main(int argc, char const *argv[]) {
@@ -23,7 +24,8 @@ int main(int argc, char const *argv[]) {
   Contato *listaContatos;
 
   listaContatos = criaListaVazia();
-  abreArquivo(listaContatos);
+  listaContatos = abreArquivo(listaContatos);
+  imprimir_contatos(listaContatos);
 
   return 0;
 }
@@ -33,15 +35,11 @@ Contato *criaListaVazia()
     return NULL;
 }
 
-void abreArquivo(Contato *lista){
+Contato *abreArquivo(){
   FILE *arq;
   char ch;
-  Contato *contato = (Contato *)malloc(sizeof(Contato));
 
-  if (contato == NULL){
-    printf("Falha ao alocar contato\n" );
-    exit(-1);
-  }
+  Contato *lista =criaListaVazia();
 
   arq = fopen("resources/contatos.txt", "r");
   if (arq == NULL){
@@ -49,6 +47,13 @@ void abreArquivo(Contato *lista){
   }
 
   while (ch != EOF){
+
+    Contato *contato = (Contato *)malloc(sizeof(Contato));
+    if (contato == NULL){
+      printf("Falha ao alocar contato\n" );
+      exit(-1);
+    }
+
     fscanf(arq, " %[^\n]", contato->nome);
     fscanf(arq, " %[^\n]", contato->celular);
     fscanf(arq, " %[^\n]", contato->endereco);
@@ -66,6 +71,24 @@ void abreArquivo(Contato *lista){
     lista = insereInicioLista(lista, contato);
   }
 	fclose(arq);
+  return lista;
+}
+
+void imprimir_contatos(Contato *lista) {
+
+  Contato *index = lista;
+  if (index == NULL) {
+    printf("Lista de contatos vazia!\n");
+  }
+
+  while (index != NULL) {
+    printf("Nome: %s\n", index->nome);
+    printf("Telefone: %s\n", index->celular);
+    printf("Endereço: %s\n", index->endereco);
+    printf("CEP: %d\n", index->cep);
+    printf("Aniversário: %s\n\n", index->dataNascimento);
+    index = index->proximo;
+  }
 }
 
 Contato *insereInicioLista(Contato *lista, Contato *contato) {
