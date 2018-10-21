@@ -16,7 +16,7 @@ typedef struct contato Contato;
 Contato *criaListaVazia();
 Contato *abreArquivo();
 Contato *insereInicioLista(Contato *lista, Contato *contato);
-void imprimir_contatos(Contato *lista);
+void imprimirContatos(Contato *lista);
 
 
 int main(int argc, char const *argv[]) {
@@ -25,7 +25,7 @@ int main(int argc, char const *argv[]) {
 
   listaContatos = criaListaVazia();
   listaContatos = abreArquivo(listaContatos);
-  imprimir_contatos(listaContatos);
+  imprimirContatos(listaContatos);
 
   return 0;
 }
@@ -74,7 +74,7 @@ Contato *abreArquivo(){
   return lista;
 }
 
-void imprimir_contatos(Contato *lista) {
+void imprimirContatos(Contato *lista) {
 
   Contato *index = lista;
   if (index == NULL) {
