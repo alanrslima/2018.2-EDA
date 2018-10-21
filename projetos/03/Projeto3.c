@@ -17,6 +17,7 @@ Contato *criaListaVazia();
 Contato *abreArquivo();
 Contato *insereInicioLista(Contato *lista, Contato *contato);
 void imprimirContatos(Contato *lista);
+void criaMenu();
 
 
 int main(int argc, char const *argv[]) {
@@ -26,6 +27,7 @@ int main(int argc, char const *argv[]) {
   listaContatos = criaListaVazia();
   listaContatos = abreArquivo(listaContatos);
   imprimirContatos(listaContatos);
+  criaMenu();
 
   return 0;
 }
@@ -97,4 +99,17 @@ Contato *insereInicioLista(Contato *lista, Contato *contato) {
     lista->anterior = contato;
   }
   return contato;
+}
+
+void criaMenu(){
+  printf("----------------------------------------------------------\n");
+  printf(">>>>>>>>>>>>>>>>>>> LISTA DE CONTATOS <<<<<<<<<<<<<<<<<<<<\n");
+  printf("----------------------------------------------------------\n\n");
+  printf("\t Menu de opções, selecione a desejeda: \n\n");
+  printf("  (1) Inserir novo contato \n");
+  printf("  (2) Remover contatos com base no nome \n");
+  printf("  (3) Visualizar contato com base no nome \n");
+  printf("  (4) Visualizar todos os contatos em ordem alfabetica \n");
+  printf("  (5) Sair \n\n");
+  printf("----------------------------------------------------------\n");
 }
