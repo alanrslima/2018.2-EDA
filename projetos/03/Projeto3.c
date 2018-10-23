@@ -20,26 +20,45 @@ struct LISTA
 
 typedef struct LISTA Lista;
 
+/* Seta uma lista com NULL */
 Lista *criaListaVazia();
+/* Abre um arquivo contatos.txt na pasta resources, caso não exista ele é criado. O arquivo 
+é lido e os contatos são salvas numa lista */ 
 Lista *abreArquivo();
+/* Aloca dinamicamente um contato */
 Lista *alocaContato();
+/* Insere um contato no inicio da lista */
 Lista *insereInicioLista(Lista *lista, Lista *contato);
+/* Cria um novo contato e o insere na lista */
 Lista *novoContato(Lista *lista);
+/* Remove um contato com base em um nome dado pelo usuario */
 Lista *removeContato(Lista *lista);
+/* Ordena a lista de contatos usando insertion sort */
+Lista *ordenaContatos(Lista *lista);
 
+/* Imprimi um ou mais contatos com base em um nome dado pelo usuario */
 void imprimirContato(Lista *lista);
+/* Imprimi todos os contatos da lista */
 void imprimirContatos(Lista *lista);
 
+/* Cria o menu de navegação */
 void criaMenu();
+/* Acessa o menu de navegação */
 void acessaMenu(Lista *lista);
 
+/* Valida o nome e o endereço do contato para que não passem de 100 caracteres */
 void validaNomeEndereco(char *nome_endereco);
+/* Valida o número de celular para o formato (xxxxx-xxxx) */
 void validaCelular(char *celular);
+/* Valida da data de nascimento no formato (dd/mm/yyyy) */
 void validaDataNascimento(char *data);
 
+/* Libera da memoria a lista de contatos */
 void liberaListaContatos(Lista *lista);
+/* Transforma em maiusculo uma string */
 void stringCapsLock(char *str);
 
+/* Escreve em um arquivo contatos.txt todos os contatos presentes na lista */
 void escreveArquivo(Lista *lista);
 
 int main(int argc, char const *argv[]) {
@@ -84,7 +103,7 @@ Lista *abreArquivo(){
       break;
     }
     lista = insereInicioLista(lista, contato);
-    // listaContatos = ordena_lista(listaContatos);
+    lista = ordenaContatos(lista);
   }
 	fclose(arq);
   return lista;
@@ -144,7 +163,7 @@ void imprimirContato(Lista *lista) {
 	      printf("Telefone: %s\n", index->Contato.celular);
 	      printf("Endereço: %s\n", index->Contato.endereco);
 	      printf("CEP: %d\n", index->Contato.cep);
-	      printf("Aniversário: %s\n", index->Contato.dataNascimento);
+	      printf("Data de nascimento: %s\n", index->Contato.dataNascimento);
 	      printf("-------------------------------------------------------\n");
 	      index = index->proximo;
 	    } else {
@@ -170,7 +189,7 @@ void imprimirContatos(Lista *lista) {
 	    printf("Telefone: %s\n", index->Contato.celular);
 	    printf("Endereço: %s\n", index->Contato.endereco);
 	    printf("CEP: %d\n", index->Contato.cep);
-	    printf("Aniversário: %s\n", index->Contato.dataNascimento);
+	    printf("Data de nascimento: %s\n", index->Contato.dataNascimento);
 	    printf("---------------------------------------------------------\n");
 	    index = index->proximo;
 	  }
@@ -286,7 +305,7 @@ Lista *novoContato(Lista *lista) {
   printf("%s\n", contato->Contato.dataNascimento);
 
   lista = insereInicioLista(lista, contato);
-  // listaContatos = ordena_lista(listaContatos);
+  lista = ordenaContatos(lista);
   return lista;
 }
 
@@ -342,5 +361,40 @@ Lista *removeContato(Lista *lista) {
   }
   return lista;
 }
+
+Lista *ordenaContatos(Lista *lista) {
+  if(lista == NULL || (lista->proximo == NULL && lista->anterior == NULL)) {
+    return lista;
+  }
+  Lista * cabecario = NULL;
+  while(lista != NULL) {
+    Lista *indexAtual = lista;
+    lista = lista->proximo;
+    if(cabecario == NULL || strcmp(indexAtual->Contato.nome, cabecario->Contato.nome) <= 0) {
+      indexAtual->anterior = NULL;
+      indexAtual->proximo = cabecario;
+      if(cabecario != NULL) {
+        cabecario->anterior = indexAtual;
+      }
+      cabecario = indexAtual;
+    } else {
+      Lista *temp = cabecario;
+      while(temp != NULL) {
+        if(temp->proximo == NULL || strcmp(indexAtual->Contato.nome, temp->proximo->Contato.nome) <= 0) {
+          indexAtual->proximo = temp->proximo;
+          if(temp->proximo != NULL) {
+            temp->proximo->anterior = indexAtual;
+          }
+          indexAtual->anterior = temp;
+          temp->proximo = indexAtual;
+          break; 
+        }
+        temp = temp->proximo;
+      }
+    }
+  }
+  return cabecario;
+}
+
 
 
