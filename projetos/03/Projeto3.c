@@ -22,9 +22,10 @@ typedef struct LISTA Lista;
 
 /* Seta uma lista com NULL */
 Lista *criaListaVazia();
-/* Abre um arquivo contatos.txt na pasta resources, caso não exista ele é criado. O arquivo
-é lido e os contatos são salvas numa lista */
-Lista *abreArquivo();
+/* Abre um arquivo contatos.txt na pasta resources, caso não exista ele é criado */
+Lista *openFile();
+/* Lê um arquivo e os contatos são salvos numa lista*/
+Lista *readFile(FILE *arq);
 /* Aloca dinamicamente um contato */
 Lista *alocaContato();
 /* Insere um contato no inicio da lista */
@@ -53,13 +54,13 @@ void validaCelular(char *celular);
 /* Valida da data de nascimento no formato (dd/mm/yyyy) */
 void validaDataNascimento(char *data);
 
-/* Libera da memoria a lista de contatos */
-void liberaListaContatos(Lista *lista);
 /* Transforma em maiusculo uma string */
 void stringCapsLock(char *str);
 
 /* Escreve em um arquivo contatos.txt todos os contatos presentes na lista */
-void escreveArquivo(Lista *lista);
+void writeFile(Lista *lista);
+/* Libera da memoria a lista de contatos */
+void liberaListaContatos(Lista *lista);
 
 int QTD_REGISTROS;
 
@@ -67,8 +68,7 @@ int main(int argc, char const *argv[]) {
 
   Lista *listaContatos;
   listaContatos = criaListaVazia();
-  listaContatos = abreArquivo(listaContatos);
-  criaMenu();
+  listaContatos = openFile(listaContatos);
   acessaMenu(listaContatos);
   return 0;
 }
@@ -77,20 +77,22 @@ Lista *criaListaVazia(){
  	return NULL;
 }
 
-Lista *abreArquivo(){
+Lista *openFile(){
   FILE *arq;
-  char ch;
   QTD_REGISTROS = 0;
-  Lista *lista = criaListaVazia();
 
   arq = fopen("resources/contatos.txt", "r");
   if (arq == NULL){
      arq = fopen("resources/contatos.txt", "w");
   }
+  return readFile(arq);
+}
 
+Lista *readFile(FILE *arq){
+  char ch;
+  Lista *lista = criaListaVazia();
   while (ch != EOF){
     Lista *contato = alocaContato();
-
     fscanf(arq, " %[^\n]", contato->Contato.nome);
     fscanf(arq, " %[^\n]", contato->Contato.celular);
     fscanf(arq, " %[^\n]", contato->Contato.endereco);
@@ -107,11 +109,11 @@ Lista *abreArquivo(){
     lista = insereInicioLista(lista, contato);
     lista = ordenaContatos(lista);
   }
-	fclose(arq);
+  fclose(arq);
   return lista;
 }
 
-void escreveArquivo(Lista *lista) {
+void writeFile(Lista *lista) {
   FILE *arq;
   arq = fopen("resources/contatos.txt", "w");
   if (arq == NULL) {
@@ -129,6 +131,7 @@ void escreveArquivo(Lista *lista) {
   }
   fclose(arq);
 }
+
 
 Lista *alocaContato(){
 	Lista *contato;
@@ -223,7 +226,7 @@ void criaMenu(){
 
 void acessaMenu(Lista *lista){
   char itemSelecionado = '0';
-
+  criaMenu();
   while (itemSelecionado != '5'){
   	scanf(" %c", &itemSelecionado);
     switch (itemSelecionado) {
@@ -244,7 +247,7 @@ void acessaMenu(Lista *lista){
         criaMenu();
         break;
       case '5':
-      	escreveArquivo(lista);
+      	writeFile(lista);
         liberaListaContatos(lista);
         break;
       default:
@@ -283,7 +286,6 @@ void liberaListaContatos(Lista *lista) {
 		free(index);
 	}
 }
-
 
 Lista *novoContato(Lista *lista) {
   Lista *contato = alocaContato();
@@ -367,7 +369,7 @@ Lista *removeContato(Lista *lista) {
 }
 
 Lista *ordenaContatos(Lista *lista) {
-  if(lista == NULL || (lista->proximo == NULL && lista->anterior == NULL)) {
+  if(lista == NULL || (lista->anterior == NULL && lista->proximo == NULL)) {
     return lista;
   }
   Lista * cabecario = NULL;
