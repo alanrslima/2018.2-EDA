@@ -29,6 +29,7 @@ Lista *removeContato(Lista *lista);
 
 void imprimirContato(Lista *lista);
 void imprimirContatos(Lista *lista);
+
 void criaMenu();
 void acessaMenu(Lista *lista);
 
@@ -39,15 +40,15 @@ void validaDataNascimento(char *data);
 void liberaListaContatos(Lista *lista);
 void stringCapsLock(char *str);
 
+void escreveArquivo(Lista *lista);
+
 int main(int argc, char const *argv[]) {
 
   Lista *listaContatos;
-
   listaContatos = criaListaVazia();
   listaContatos = abreArquivo(listaContatos);
   criaMenu();
   acessaMenu(listaContatos);
-
   return 0;
 }
 
@@ -67,7 +68,6 @@ Lista *abreArquivo(){
   }
 
   while (ch != EOF){
-
     Lista *contato = alocaContato();
 
     fscanf(arq, " %[^\n]", contato->Contato.nome);
@@ -77,7 +77,6 @@ Lista *abreArquivo(){
     fscanf(arq, " %[^\n]", contato->Contato.dataNascimento);
     contato->proximo = NULL;
     contato->anterior = NULL;
-
     ch = fgetc(arq);
     ch = fgetc(arq);
 
@@ -89,6 +88,25 @@ Lista *abreArquivo(){
   }
 	fclose(arq);
   return lista;
+}
+
+void escreveArquivo(Lista *lista) {
+  FILE *arq;
+  arq = fopen("resources/contatos.txt", "w");
+  if (arq == NULL) {
+    printf("Falha ao abrir arquivo! \n");
+    exit(1);
+  }
+
+  while (lista != NULL) {
+    fprintf(arq, "%s\n", lista->Contato.nome);
+    fprintf(arq, "%s\n", lista->Contato.celular);
+    fprintf(arq, "%s\n", lista->Contato.endereco);
+    fprintf(arq, "%d\n", lista->Contato.cep);
+    fprintf(arq, "%s\n$\n", lista->Contato.dataNascimento);
+    lista = lista->proximo;
+  }
+  fclose(arq);
 }
 
 Lista *alocaContato(){
@@ -103,33 +121,39 @@ Lista *alocaContato(){
 
 void imprimirContato(Lista *lista) {
 
-  char nomeParam[101];
-  printf("\n----------------------------------------------------------\n");
-  printf("	Listagem de contato(s)");
-  printf("\n----------------------------------------------------------\n");
-  printf("Digite o nome: ");
-  validaNomeEndereco(nomeParam);
-  stringCapsLock(nomeParam);
-
-  Lista *index = lista;
+	Lista *index = lista;
   if (index == NULL) {
-    printf("Não há nenhum contato na lista!\n");
-  }
-
-  while (index != NULL) {
-  	char temp[101];
-    strcpy(temp, index->Contato.nome);
-    stringCapsLock(temp);
-    if (strstr(temp, nomeParam) != NULL) {
-    	printf("\nNome: %s\n", index->Contato.nome);
-      printf("Telefone: %s\n", index->Contato.celular);
-      printf("Endereço: %s\n", index->Contato.endereco);
-      printf("CEP: %d\n", index->Contato.cep);
-      printf("Aniversário: %s\n", index->Contato.dataNascimento);
-      index = index->proximo;
-    } else {
-      index = index->proximo;
-    }
+    printf("\n\nNÃO HÁ NENHUM CONTATO NA LISTA!\n");
+  }else{
+	  char nomeParam[101];
+	  printf("\n----------------------------------------------------------\n");
+	  printf("	Listagem de contato(s)");
+	  printf("\n----------------------------------------------------------\n");
+	  printf("Digite o nome: ");
+	  validaNomeEndereco(nomeParam);
+	  stringCapsLock(nomeParam);
+  	int existe = 0;
+  	while (index != NULL) {
+	  	char temp[101];
+	    strcpy(temp, index->Contato.nome);
+	    stringCapsLock(temp);
+	    if (strstr(temp, nomeParam) != NULL) {
+	    	existe = 1;
+	    	printf("\n-------------------------------------------------------\n");
+	    	printf("Nome: %s\n", index->Contato.nome);
+	      printf("Telefone: %s\n", index->Contato.celular);
+	      printf("Endereço: %s\n", index->Contato.endereco);
+	      printf("CEP: %d\n", index->Contato.cep);
+	      printf("Aniversário: %s\n", index->Contato.dataNascimento);
+	      printf("-------------------------------------------------------\n");
+	      index = index->proximo;
+	    } else {
+	      index = index->proximo;
+	    }
+  	}
+  	if (!existe){
+  		printf("\nNÃO EXISTE NENHUM CONTATO COM ESTE NOME\n");
+  	}
   }
 }
 
@@ -137,17 +161,19 @@ void imprimirContatos(Lista *lista) {
 
   Lista *index = lista;
   if (index == NULL) {
-    printf("Lista de contatos vazia!\n");
-  }
-
-  printf("\n Lista de contatos: \n");
-  while (index != NULL) {
-    printf("\nNome: %s\n", index->Contato.nome);
-    printf("Telefone: %s\n", index->Contato.celular);
-    printf("Endereço: %s\n", index->Contato.endereco);
-    printf("CEP: %d\n", index->Contato.cep);
-    printf("Aniversário: %s\n", index->Contato.dataNascimento);
-    index = index->proximo;
+    printf("\n\nNÃO HÁ NENHUM CONTATO NA LISTA!\n");
+  }else{
+  	printf("\n  ** CONTATOS: **\n");
+	  while (index != NULL) {
+	  	printf("\n-------------------------------------------------------\n");
+	    printf("Nome: %s\n", index->Contato.nome);
+	    printf("Telefone: %s\n", index->Contato.celular);
+	    printf("Endereço: %s\n", index->Contato.endereco);
+	    printf("CEP: %d\n", index->Contato.cep);
+	    printf("Aniversário: %s\n", index->Contato.dataNascimento);
+	    printf("---------------------------------------------------------\n");
+	    index = index->proximo;
+	  }
   }
 }
 
@@ -196,7 +222,7 @@ void acessaMenu(Lista *lista){
         criaMenu();
         break;
       case '5':
-        printf("\n\nSair do programa \n (Escrever arquivo e limpar lista da memoria)\n\n");
+      	escreveArquivo(lista);
         liberaListaContatos(lista);
         break;
       default:
@@ -274,42 +300,45 @@ void stringCapsLock(char *str){
 
 Lista *removeContato(Lista *lista) {
 
-  char nomeParam[101];
-  printf("\n----------------------------------------------------------\n");
-  printf("	Exclusão de contato");
-  printf("\n----------------------------------------------------------\n");
-  printf("Digite o nome: ");
-  validaNomeEndereco(nomeParam);
-  stringCapsLock(nomeParam);
-
-  Lista *index = lista;
-
-  if (index == NULL) {
-  	printf("Não há nenhum contato na lista!\n");
-  }
-
-  while (index != NULL) {
-  	char temp[101];
-    strcpy(temp, index->Contato.nome);
-    stringCapsLock(temp);
-    if (strstr(temp, nomeParam) != NULL) {
-    	Lista *listaAux;
-    	if(index->proximo != NULL) {
-        index->proximo->anterior = index->anterior;
-      }
-      if(index->anterior != NULL) {
-        index->anterior->proximo = index->proximo;
-      }
-      if (index->anterior == NULL) {
-        lista = index->proximo;
-      }
-      listaAux = index;
-      index = index->proximo;
-      free(listaAux);
-      printf("%s Removido(a) com sucesso! \n", temp);
-    } else {
-      index = index->proximo;
-    }
+	Lista *index = lista;
+	if (index == NULL) {
+  	printf("\n\nNÃO HÁ NENHUM CONTATO NA LISTA!\n");
+  }else{
+  	char nomeParam[101];
+	  printf("\n----------------------------------------------------------\n");
+	  printf("	Exclusão de contato");
+	  printf("\n----------------------------------------------------------\n");
+	  printf("Digite o nome: ");
+	  validaNomeEndereco(nomeParam);
+	  stringCapsLock(nomeParam);
+	  int existe = 0;
+	  while (index != NULL) {
+	  	char temp[101];
+	    strcpy(temp, index->Contato.nome);
+	    stringCapsLock(temp);
+	    if (strstr(temp, nomeParam) != NULL) {
+	    	Lista *listaAux;
+	    	if(index->proximo != NULL) {
+	        index->proximo->anterior = index->anterior;
+	      }
+	      if(index->anterior != NULL) {
+	        index->anterior->proximo = index->proximo;
+	      }
+	      if (index->anterior == NULL) {
+	        lista = index->proximo;
+	      }
+	      existe = 1;
+	      listaAux = index;
+	      index = index->proximo;
+	      free(listaAux);
+	      printf("%s Removido(a) com sucesso! \n", temp);
+	    } else {
+	      index = index->proximo;
+	    }
+	  }
+	  if (!existe){
+  		printf("\nNÃO EXISTE NENHUM CONTATO COM ESTE NOME\n");	  	
+	  }
   }
   return lista;
 }
