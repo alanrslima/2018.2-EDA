@@ -22,8 +22,8 @@ typedef struct LISTA Lista;
 
 /* Seta uma lista com NULL */
 Lista *criaListaVazia();
-/* Abre um arquivo contatos.txt na pasta resources, caso não exista ele é criado. O arquivo 
-é lido e os contatos são salvas numa lista */ 
+/* Abre um arquivo contatos.txt na pasta resources, caso não exista ele é criado. O arquivo
+é lido e os contatos são salvas numa lista */
 Lista *abreArquivo();
 /* Aloca dinamicamente um contato */
 Lista *alocaContato();
@@ -61,6 +61,8 @@ void stringCapsLock(char *str);
 /* Escreve em um arquivo contatos.txt todos os contatos presentes na lista */
 void escreveArquivo(Lista *lista);
 
+int QTD_REGISTROS;
+
 int main(int argc, char const *argv[]) {
 
   Lista *listaContatos;
@@ -78,7 +80,7 @@ Lista *criaListaVazia(){
 Lista *abreArquivo(){
   FILE *arq;
   char ch;
-
+  QTD_REGISTROS = 0;
   Lista *lista = criaListaVazia();
 
   arq = fopen("resources/contatos.txt", "r");
@@ -182,7 +184,7 @@ void imprimirContatos(Lista *lista) {
   if (index == NULL) {
     printf("\n\nNÃO HÁ NENHUM CONTATO NA LISTA!\n");
   }else{
-  	printf("\n  ** CONTATOS: **\n");
+  	printf("\n  ** VOCÊ POSSUE %d CONTATOS **\n", QTD_REGISTROS);
 	  while (index != NULL) {
 	  	printf("\n-------------------------------------------------------\n");
 	    printf("Nome: %s\n", index->Contato.nome);
@@ -197,6 +199,7 @@ void imprimirContatos(Lista *lista) {
 }
 
 Lista *insereInicioLista(Lista *lista, Lista *contato) {
+  QTD_REGISTROS += 1;
   if (lista != NULL) {
     contato->proximo = lista;
     lista->anterior = contato;
@@ -271,7 +274,7 @@ void validaDataNascimento(char *data){
 	while (strlen(data) > 10 || !isdigit(data[0]) || !isdigit(data[1]) || data[2] != '/' || !isdigit(data[3]) || !isdigit(data[4]) || data[5] != '/' || !isdigit(data[6]) || !isdigit(data[7]) || !isdigit(data[8]) || !isdigit(data[9])) {
     printf("\nData inválida! Digite novamente (dd/mm/yyyy): ");
     scanf(" %[^\n]", data);
-  }	
+  }
 }
 
 void liberaListaContatos(Lista *lista) {
@@ -350,13 +353,14 @@ Lista *removeContato(Lista *lista) {
 	      listaAux = index;
 	      index = index->proximo;
 	      free(listaAux);
+        QTD_REGISTROS -= 1;
 	      printf("%s Removido(a) com sucesso! \n", temp);
 	    } else {
 	      index = index->proximo;
 	    }
 	  }
 	  if (!existe){
-  		printf("\nNÃO EXISTE NENHUM CONTATO COM ESTE NOME\n");	  	
+  		printf("\nNÃO EXISTE NENHUM CONTATO COM ESTE NOME\n");
 	  }
   }
   return lista;
@@ -387,7 +391,7 @@ Lista *ordenaContatos(Lista *lista) {
           }
           indexAtual->anterior = temp;
           temp->proximo = indexAtual;
-          break; 
+          break;
         }
         temp = temp->proximo;
       }
@@ -395,6 +399,3 @@ Lista *ordenaContatos(Lista *lista) {
   }
   return cabecario;
 }
-
-
-
