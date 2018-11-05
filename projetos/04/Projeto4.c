@@ -5,12 +5,12 @@
 
 #define TAM_CODIGO 7
 #define QTD_VOOS 64
+#define MAX_NIVEL_COMBUSTIVEL 13
 
 typedef struct voo{
     char codigo[TAM_CODIGO];
     char tipo_voo;
     int combustivel;
-//    int prioridade;
     struct voo* prox;
 } Voo;
 
@@ -22,10 +22,17 @@ typedef struct fila{
 
 void gera_aleatorios(int *aprox, int *decol, int *voos);
 void aleatoriza_codigos_voos(char *codigos[QTD_VOOS]);
+void insere_fila(Fila *fila, Voo *voo);
+void gera_lista_decolagem(Voo *lista_inicial, Fila *fila);
 
 Voo *gera_voos_decolagens_aproximacoes(int qtd_decolagens, int qtd_aproximacoes, char *codigos[QTD_VOOS]);
 Voo *cria_voo(char *codigo, char tipo, int combustivel);
 Voo *insere_voo(Voo *lista, Voo *novo_voo);
+Voo *gera_lista_aproximacao(Voo *lista_inicial, Fila *fila);
+
+
+Fila *cria_fila();
+
 
 int main(){
 
@@ -41,7 +48,38 @@ int main(){
 
 	gera_aleatorios(&NAproximacoes, &NDecolagens, &NVoos);
     aleatoriza_codigos_voos(codigos_voos);
-    Voo *lista = gera_voos_decolagens_aproximacoes(NDecolagens, NAproximacoes, codigos_voos);
+    Voo *lista_voos_inicial = gera_voos_decolagens_aproximacoes(NDecolagens, NAproximacoes, codigos_voos);
+    
+    Fila *fila_aproximacoes = cria_fila();
+    lista_voos_inicial = gera_lista_aproximacao(lista_voos_inicial, fila_aproximacoes);
+    
+    Fila *fila_decolagens = cria_fila();
+    gera_lista_decolagem(lista_voos_inicial, fila_decolagens);
+    
+    
+    
+    
+    
+    
+    printf("Aproximacoes:%d Decolagens:%d Voos:%d\n",NAproximacoes, NDecolagens, NVoos);
+    Voo *atual = fila_aproximacoes->inicio;
+    int i = 0;
+    while (atual != NULL){
+        printf("Código:%s  Combustivel:%d  Tipo:%c\n", atual->codigo, atual->combustivel, atual->tipo_voo);
+        atual = atual->prox;
+        i++;
+    }
+    printf("QUANTIDADE = %d\n\n\n", i);
+    
+    atual = fila_decolagens->inicio;
+    i = 0;
+    while (atual != NULL){
+        printf("Código:%s  Combustivel:%d  Tipo:%c\n", atual->codigo, atual->combustivel, atual->tipo_voo);
+        atual = atual->prox;
+        i++;
+    }
+    printf("QUANTIDADE = %d", i);
+    
 
 	return 0;
 }
@@ -66,24 +104,28 @@ void aleatoriza_codigos_voos(char *codigos[QTD_VOOS]){
 }
 
 Voo *gera_voos_decolagens_aproximacoes(int qtd_decolagens, int qtd_aproximacoes, char *codigos[QTD_VOOS]){
-    Voo *lista = NULL;
+    Voo *lista_voos = NULL;
     // Gera voos para decolagens
     for (int i=0; i<qtd_decolagens; i++){
         Voo *novo_voo = cria_voo(codigos[i], 'D', -1);
-        lista = insere_voo(lista, novo_voo);
+        lista_voos = insere_voo(lista_voos, novo_voo);
     }
     // Gera voos para aproximaçoes
     for (int i=qtd_decolagens; i<(qtd_decolagens+qtd_aproximacoes); i++){
-        int combustivel = (rand() % 13);
+        int combustivel = (rand() % MAX_NIVEL_COMBUSTIVEL);
         Voo *novo_voo = cria_voo(codigos[i], 'A', combustivel);
-        lista = insere_voo(lista, novo_voo);
+        lista_voos = insere_voo(lista_voos, novo_voo);
     }
-    return lista;
+    return lista_voos;
 }
 
 Voo *cria_voo(char *codigo, char tipo, int combustivel) {
     // Aloca uma struct de voo
     Voo *novo_voo = (Voo *)malloc(sizeof(Voo));
+    if (novo_voo == NULL){
+        printf("Erro na alocação!\n");
+        exit(1);
+    }
     // Atribui os valores para a struc
     strcpy(novo_voo->codigo, codigo);
     novo_voo->tipo_voo = tipo;
@@ -98,3 +140,63 @@ Voo *insere_voo(Voo *lista, Voo *novo_voo) {
     }
     return novo_voo;
 }
+
+Fila *cria_fila(){
+    Fila *fila = (Fila *)malloc(sizeof(Fila));
+    if (fila != NULL) {
+        fila->inicio = NULL;
+        fila->fim = NULL;
+    }else{
+        printf("Erro na alocação!\n");
+        exit(1);
+    }
+    return fila;
+}
+
+void insere_fila(Fila *fila, Voo *voo) {
+    voo->prox = NULL;
+    if (fila->fim == NULL) {
+        fila->inicio = voo;
+    } else {
+        fila->fim->prox = voo;
+    }
+    fila->fim = voo;
+}
+
+Voo *gera_lista_aproximacao(Voo *lista_inicial, Fila *fila){
+    Voo *lista = lista_inicial;
+    for (int i = 0; i < 13; i++) {
+        Voo *elemento_atual = lista;
+        Voo *elemento_anterior = NULL;
+        while (elemento_atual != NULL) {
+            
+            if (elemento_atual->combustivel == i) {
+                if (elemento_atual == lista) {
+                    lista = lista->prox;
+                }else {
+                    elemento_anterior->prox = elemento_atual->prox;
+                }
+                Voo *aux = elemento_atual->prox;
+                insere_fila(fila, elemento_atual);
+                elemento_atual = aux;
+            }else {
+                elemento_anterior = elemento_atual;
+                elemento_atual = elemento_atual->prox;
+            }
+        }
+    }
+    return lista;
+}
+
+void gera_lista_decolagem(Voo *lista_inicial, Fila *fila){
+    Voo *elemento_atual = lista_inicial;
+    Voo *elemento_proximo = NULL;
+    
+    while(elemento_atual != NULL) {
+        elemento_proximo = elemento_atual->prox;
+        insere_fila(fila, elemento_atual);
+        elemento_atual = elemento_proximo;
+    }
+}
+
+
