@@ -11,6 +11,7 @@ typedef struct voo{
     char codigo[TAM_CODIGO];
     char tipo_voo;
     int combustivel;
+    int emergencia;
     struct voo* prox;
 } Voo;
 
@@ -20,18 +21,34 @@ typedef struct fila{
 } Fila;
 
 
+void set_hora_atual(int *horas, int *min);
 void gera_aleatorios(int *aprox, int *decol, int *voos);
 void aleatoriza_codigos_voos(char *codigos[QTD_VOOS]);
 void insere_fila(Fila *fila, Voo *voo);
 void gera_lista_decolagem(Voo *lista_inicial, Fila *fila);
+void imprime_fila(Fila *fila);
 
 Voo *gera_voos_decolagens_aproximacoes(int qtd_decolagens, int qtd_aproximacoes, char *codigos[QTD_VOOS]);
 Voo *cria_voo(char *codigo, char tipo, int combustivel);
 Voo *insere_voo(Voo *lista, Voo *novo_voo);
 Voo *gera_lista_aproximacao(Voo *lista_inicial, Fila *fila);
 
-
 Fila *cria_fila();
+
+int verifica_avioes_sem_combustivel(Fila *fila);
+
+void set_emergencia(Fila *fila);
+void aciona_pista_aproximacao(Fila *aprox, int hora, int min, int *pista, int num_pista);
+void aciona_pista_decolagem(Fila *decol, int hora, int min, int *pista, int num_pista);
+void verifica_pistas(int *pista_1, int *pista_2, int *pista_3);
+void incrementa_relogio(int *hora, int *min);
+void verifica_combustivel(int *unidade_tempo, Fila *aprox);
+void derruba_avioes(Fila *aprox);
+
+void remove_fila(Fila *fila);
+void libera_fila(Fila *fila);
+
+int pistas_disponiveis(int pista_1, int pista_2, int pista_3);
 
 
 int main(){
@@ -56,32 +73,175 @@ int main(){
     Fila *fila_decolagens = cria_fila();
     gera_lista_decolagem(lista_voos_inicial, fila_decolagens);
     
+    int horas, minutos;
+    set_hora_atual(&horas, &minutos);
     
+    printf("---------------------------------------------------------------------------------\n");
+    printf("Aeroporto Internacional de Brasília\n");
+    printf("Hora Inicial: %d:%d\n", horas, minutos);
+    printf("Fila de Pedidos: [código do voo – P/D – prioridade]\n");
+    printf("NVoos: %d\n", NVoos);
+    printf("Naproximações: %d\n", NAproximacoes);
+    printf("NDecolagens: %d\n", NDecolagens);
+    printf("---------------------------------------------------------------------------------\n\n\n");
     
+    printf("Aviões em aproximação:\n\n");
+    imprime_fila(fila_aproximacoes);
+    printf("\n\nAviões em decolagem:\n\n");
+    imprime_fila(fila_decolagens);
     
+    printf("\n\n----------------------------------------------");
+    printf("\nListagem de eventos:\n");
+    printf("----------------------------------------------\n\n");
     
+    int pista_1, pista_2, pista_3, unidade_tempo = 1;
     
-    printf("Aproximacoes:%d Decolagens:%d Voos:%d\n",NAproximacoes, NDecolagens, NVoos);
-    Voo *atual = fila_aproximacoes->inicio;
-    int i = 0;
-    while (atual != NULL){
-        printf("Código:%s  Combustivel:%d  Tipo:%c\n", atual->codigo, atual->combustivel, atual->tipo_voo);
-        atual = atual->prox;
-        i++;
+    while (fila_aproximacoes->inicio != NULL || fila_decolagens->inicio != NULL ){
+        
+        derruba_avioes(fila_aproximacoes);
+        
+        int avioes_sem_combustivel = 0;
+        if (pistas_disponiveis(pista_1, pista_2, pista_3)){
+           avioes_sem_combustivel = verifica_avioes_sem_combustivel(fila_aproximacoes);
+        }
+        // PISTA 1
+        aciona_pista_aproximacao(fila_aproximacoes, horas, minutos, &pista_1, 1);
+        aciona_pista_decolagem(fila_decolagens, horas, minutos, &pista_1, 1);
+        // PISTA 2
+        aciona_pista_aproximacao(fila_aproximacoes, horas, minutos, &pista_2, 2);
+        aciona_pista_decolagem(fila_decolagens, horas, minutos, &pista_2, 2);
+        // PISTA 3
+        if (avioes_sem_combustivel >= 3){
+            aciona_pista_aproximacao(fila_aproximacoes, horas, minutos, &pista_3, 3);
+        }
+        aciona_pista_decolagem(fila_decolagens, horas, minutos, &pista_3, 3);
+        
+        verifica_pistas(&pista_1, &pista_2, &pista_3);
+        verifica_combustivel(&unidade_tempo, fila_aproximacoes);
+        set_emergencia(fila_aproximacoes);
+        incrementa_relogio(&horas, &minutos);
+        unidade_tempo ++;
     }
-    printf("QUANTIDADE = %d\n\n\n", i);
-    
-    atual = fila_decolagens->inicio;
-    i = 0;
-    while (atual != NULL){
-        printf("Código:%s  Combustivel:%d  Tipo:%c\n", atual->codigo, atual->combustivel, atual->tipo_voo);
-        atual = atual->prox;
-        i++;
-    }
-    printf("QUANTIDADE = %d", i);
-    
+    libera_fila(fila_aproximacoes);
+    libera_fila(fila_decolagens);
 
 	return 0;
+}
+
+int pistas_disponiveis(int pista_1, int pista_2, int pista_3){
+    if ((pista_1 == 0) || (pista_2 == 0) || (pista_3 == 0)){
+        return 1;
+    }else{
+        return 0;
+    }
+}
+
+void derruba_avioes(Fila *aprox){
+    Voo *avioes_queda = aprox->inicio;
+    while(avioes_queda != NULL) {
+        if(avioes_queda->emergencia) {
+            printf("----------------------------------------------\n");
+            printf(" ** ALERTA CRÍTICO: Aeronave irá cair **\n\n");
+            printf("Código do voo: %s - %c - %d\n", avioes_queda->codigo, avioes_queda->tipo_voo, avioes_queda->combustivel);
+            printf("Status: [Aeronave Caiu]\n");
+            printf("----------------------------------------------\n\n");
+            remove_fila(aprox);
+        }
+        avioes_queda = avioes_queda->prox;
+    }
+}
+
+void incrementa_relogio(int *hora, int *min){
+    *min += 5;
+    if(*min >= 60) {
+        *min = *min - 60;
+        *hora += 1;
+        if(*hora >= 24) {
+            *hora = 0;
+        }
+    }
+}
+
+void verifica_combustivel(int *unidade_tempo, Fila *aprox){
+    if(*unidade_tempo == 10) {
+        Voo *consome_combustivel = aprox->inicio;
+        while(consome_combustivel != NULL) {
+            consome_combustivel->combustivel = (consome_combustivel->combustivel) - 1;
+            consome_combustivel = consome_combustivel->prox;
+        }
+        consome_combustivel = aprox->inicio;
+        *unidade_tempo = 0;
+    }
+}
+
+void verifica_pistas(int *pista_1, int *pista_2, int *pista_3){
+    if (*pista_1 > 0){
+        *pista_1 -= 1;
+    }
+    if (*pista_2 > 0){
+        *pista_2 -= 1;
+    }
+    if (*pista_3 > 0){
+        *pista_3 -= 1;
+    }
+}
+
+void aciona_pista_aproximacao(Fila *aprox, int hora, int min, int *pista, int num_pista){
+    if (*pista == 0){
+        if (aprox->inicio != NULL){
+            printf("----------------------------------------------\n");
+            printf("Código do voo: %s - %c - %d\n", aprox->inicio->codigo, aprox->inicio->tipo_voo, aprox->inicio->combustivel);
+            printf("Status: [Aeronave Pousou]\n");
+            printf("Horário do ínicio do procedimento: %02d:%02d\n", hora, min);
+            printf("Número da pista: %d\n", num_pista);
+            printf("----------------------------------------------\n\n");
+            *pista = 4;
+            remove_fila(aprox);
+        }
+    }
+}
+
+void aciona_pista_decolagem(Fila *decol, int hora, int min, int *pista, int num_pista){
+    if (*pista == 0){
+        if(decol->inicio != NULL){
+            printf("----------------------------------------------\n");
+            printf("Código do voo: %s - %c\n", decol->inicio->codigo, decol->inicio->tipo_voo);
+            printf("Status: [Aeronave Decolou]\n");
+            printf("Horário do ínicio do procedimento: %02d:%02d\n", hora, min);
+            printf("Número da pista: %d\n", num_pista);
+            printf("----------------------------------------------\n\n");
+            *pista = 2;
+            remove_fila(decol);
+        }
+    }
+}
+
+void set_emergencia(Fila *fila){
+    Voo *confere_combustivel = fila->inicio;
+    while(confere_combustivel != NULL) {
+        if(confere_combustivel->combustivel == 0) {
+            confere_combustivel->emergencia = 1;
+        }
+        confere_combustivel = confere_combustivel->prox;
+    }
+}
+
+
+int verifica_avioes_sem_combustivel(Fila *fila){
+    int aux = 0;
+    Voo *confere_combustivel = fila->inicio;
+    while(confere_combustivel != NULL) {
+        if(confere_combustivel->combustivel == 0) {
+            aux++;
+        }
+        confere_combustivel = confere_combustivel->prox;
+    }
+    if(aux >= 3) {
+        printf("\n---------------------------------------");
+        printf("\nALERTA GERAL DE DESVIO DE AERONAVE\n");
+        printf("_________________________________________\n");
+    }
+    return aux;
 }
 
 void gera_aleatorios(int *aprox, int *decol, int *voos){
@@ -112,7 +272,8 @@ Voo *gera_voos_decolagens_aproximacoes(int qtd_decolagens, int qtd_aproximacoes,
     }
     // Gera voos para aproximaçoes
     for (int i=qtd_decolagens; i<(qtd_decolagens+qtd_aproximacoes); i++){
-        int combustivel = (rand() % MAX_NIVEL_COMBUSTIVEL);
+//        int combustivel = (rand() % MAX_NIVEL_COMBUSTIVEL);
+        int combustivel = 0;
         Voo *novo_voo = cria_voo(codigos[i], 'A', combustivel);
         lista_voos = insere_voo(lista_voos, novo_voo);
     }
@@ -130,6 +291,7 @@ Voo *cria_voo(char *codigo, char tipo, int combustivel) {
     strcpy(novo_voo->codigo, codigo);
     novo_voo->tipo_voo = tipo;
     novo_voo->combustivel = combustivel;
+    novo_voo->emergencia = 0;
     novo_voo->prox = NULL;
     return novo_voo;
 }
@@ -199,4 +361,51 @@ void gera_lista_decolagem(Voo *lista_inicial, Fila *fila){
     }
 }
 
+void imprime_fila(Fila *fila){
+    Voo *voo = fila->inicio;
+    while (voo != NULL) {
+        printf("[%s-%c-%d]\n", voo->codigo, voo->tipo_voo, voo->combustivel);
+        voo = voo->prox;
+    }
+}
 
+void set_hora_atual(int *horas, int *min){
+    char hora_atual[9] = __TIME__;
+    char h[3], m[3];
+    for (int i=0; i<9; i++){
+        if (i == 0 || i == 1){
+            h[i] = hora_atual[i];
+            if (i == 2){
+                h[i] = '\0';
+            }
+        }else if(i == 3 || i == 4){
+            m[i-3] = hora_atual[i];
+            if (i == 5){
+                h[i-3] = '\0';
+            }
+        }
+    }
+    *horas = atoi(h);
+    *min = atoi(m);
+}
+
+void remove_fila(Fila *fila) {
+    Voo *voo = fila->inicio;
+    fila->inicio = fila->inicio->prox;
+    if (fila->inicio == NULL) {
+        fila->fim = NULL;
+    }
+    free(voo);
+}
+
+void libera_fila(Fila *fila) {
+    if (fila != NULL) {
+        Voo *voo;
+        while (fila->inicio != NULL) {
+            voo = fila->inicio;
+            fila->inicio = fila->inicio->prox;
+            free(voo);
+        }
+        free(fila);
+    }
+}
