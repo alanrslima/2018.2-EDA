@@ -11,11 +11,14 @@ typedef struct no{
 No **loadTreeFromFile(char *url);
 int getHeight(No **raiz);
 int insere_no(No **raiz, int valor);
+void doMenu();
+void acessaMenu();
 
 int main(int argc, char const *argv[]) {
 
   No **arvore_binaria = loadTreeFromFile("resources/BSTs/bst2.txt");
   printf("\n\nAltura da árvore: %d\n", getHeight(arvore_binaria));
+  acessaMenu();
 
   return 0;
 }
@@ -89,4 +92,73 @@ int insere_no(No **raiz, int valor){
       anterior->esquerda = novo;
   }
   return 1;
+}
+
+void doMenu(){
+  printf("----------------------------------------------------------------------\n" );
+  printf("\t\tBinary Tree\n" );
+  printf("----------------------------------------------------------------------\n\n" );
+  printf("Menu de opções\n" );
+  printf("0 - LoadTreeFromFile \n" );
+  printf("1 - ShowTree \n" );
+  printf("2 - IsFull \n" );
+  printf("3 - GetHeight \n" );
+  printf("4 - RemoveValue \n" );
+  printf("5 - PrintInOrder \n" );
+  printf("6 - PrintPreOrder \n" );
+  printf("7 - PrintPostOrder \n" );
+  printf("8 - BalanceTree \n" );
+  printf("9 - Sair do Programa\n" );
+  printf("Escolha uma ação e digite seu número correspondente: " );
+}
+
+void acessaMenu(){
+  char item_selecionado = 'I';
+  doMenu();
+  while (item_selecionado != '9'){
+    scanf(" %c", &item_selecionado);
+    switch (item_selecionado) {
+      case '0':
+        // LoadTreeFromFile
+        doMenu();
+        break;
+      case '1':
+      	// ShowTree
+        doMenu();
+        break;
+      case '2':
+      	// IsFull
+        doMenu();
+        break;
+      case '3':
+        // GetHeight
+        doMenu();
+        break;
+      case '4':
+      	// RemoveValue
+        doMenu();
+        break;
+      case '5':
+          // PrintInOrder
+        doMenu();
+        break;
+      case '6':
+        	// PrintPreOrder
+        doMenu();
+        break;
+      case '7':
+        	// PrintPostOrder
+        doMenu();
+        break;
+      case '8':
+          // BalanceTree
+        doMenu();
+        break;
+      case '9':
+        	// Sair do Programa
+        break;
+      default:
+        printf("\nEntrada inválida! Digite novamente: ");
+    }
+  }
 }
