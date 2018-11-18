@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <string.h>
 
 typedef struct no{
   int numero;
@@ -10,8 +11,13 @@ typedef struct no{
 
 No **loadTreeFromFile(char *url);
 int getHeight(No **raiz);
-int insere_no(No **raiz, int valor);
+void printPreOrder(No **raiz);
+void printInOrder(No **raiz);
+void printPosOrder(No **raiz);
 
+void printTree(No **raiz, char *prefix);
+int totalNos(No **raiz);
+int insereNo(No **raiz, int valor);
 int arvoreNula(No **raiz);
 void liberaArvore(No **raiz);
 void liberaNo(No *no);
@@ -40,7 +46,7 @@ No **loadTreeFromFile(char *url){
   }else{
     while(!feof(arq)) {
       fscanf(arq, "%d", &numero);
-      if (insere_no(raiz, numero)){
+      if (insereNo(raiz, numero)){
         printf("Inserção de nó concluída! Número inserido: %d\n", numero );
       }
     }
@@ -62,7 +68,7 @@ int getHeight(No **raiz){
     return altura_direita + 1;
 }
 
-int insere_no(No **raiz, int valor){
+int insereNo(No **raiz, int valor){
   if (raiz == NULL)
     return 0;
   No* novo;
@@ -97,6 +103,36 @@ int insere_no(No **raiz, int valor){
   return 1;
 }
 
+void printPreOrder(No **raiz){
+  if (raiz == NULL)
+    return;
+  if (*raiz != NULL){
+    printf("%d\n", (*raiz)->numero);
+    printPreOrder(&((*raiz)->esquerda));
+    printPreOrder(&((*raiz)->direita));
+  }
+}
+
+void printPosOrder(No **raiz){
+  if (raiz == NULL)
+    return;
+  if (*raiz != NULL){
+    printPreOrder(&((*raiz)->esquerda));
+    printPreOrder(&((*raiz)->direita));
+    printf("%d\n", (*raiz)->numero);
+  }
+}
+
+void printInOrder(No **raiz){
+  if (raiz == NULL)
+    return;
+  if (*raiz != NULL){
+    printInOrder(&((*raiz)->esquerda));
+    printf("%d\n", (*raiz)->numero);
+    printPreOrder(&((*raiz)->direita));
+  }
+}
+
 int arvoreNula(No **raiz){
   if (raiz == NULL)
     return 1;
@@ -120,6 +156,34 @@ void liberaArvore(No **raiz){
   liberaNo(*raiz);
   free(raiz);
   }
+}
+
+void printTree(No **raiz, char *prefix){
+  if (arvoreNula(raiz)){
+    printf("A árvore é NULA\n" );
+    return;
+  }else{
+    if (strcmp(prefix, "Pos") == 0){
+      printPosOrder(raiz);
+    }else if (strcmp(prefix, "Pre") == 0){
+      printPreOrder(raiz);
+    }else if (strcmp(prefix, "In") == 0){
+      printInOrder(raiz);
+    }else{
+      printf("Prefixo incorreto\n" );
+    }
+  }
+}
+
+
+int totalNos(No **raiz){
+  if (raiz == NULL)
+    return 0;
+  if (*raiz == NULL)
+    return 0;
+  int altura_esquerda = totalNos(&((*raiz)->esquerda));
+  int altura_direita = totalNos(&((*raiz)->direita));
+  return (altura_esquerda + altura_direita + 1);
 }
 
 void doMenu(){
@@ -163,15 +227,11 @@ void acessaMenu(No **arvore_binaria){
         doMenu();
         break;
       case '2':
-      	// IsFull
+      	printf("Quantidade de nós na árvore = %d\n", totalNos(arvore_binaria));
         doMenu();
         break;
       case '3':
-        if (arvoreNula(arvore_binaria)){
-          printf("A árvore é nula, portando sua altura é nula\n" );
-        }else{
-          printf("A altura da arvore é: %d\n", getHeight(arvore_binaria));
-        }
+          printf("A altura da arvore = %d\n", getHeight(arvore_binaria));
         doMenu();
         break;
       case '4':
@@ -179,15 +239,15 @@ void acessaMenu(No **arvore_binaria){
         doMenu();
         break;
       case '5':
-          // PrintInOrder
+        printTree(arvore_binaria, "In");
         doMenu();
         break;
       case '6':
-        	// PrintPreOrder
+        printTree(arvore_binaria, "Pre");
         doMenu();
         break;
       case '7':
-        	// PrintPostOrder
+        printTree(arvore_binaria, "Pos");
         doMenu();
         break;
       case '8':
