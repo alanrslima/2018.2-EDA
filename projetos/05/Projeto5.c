@@ -11,15 +11,18 @@ typedef struct no{
 No **loadTreeFromFile(char *url);
 int getHeight(No **raiz);
 int insere_no(No **raiz, int valor);
+
+int arvoreNula(No **raiz);
+void liberaArvore(No **raiz);
+void liberaNo(No *no);
+
+// Funções criação de Menu
 void doMenu();
-void acessaMenu();
+void acessaMenu(No **arvore_binaria);
 
 int main(int argc, char const *argv[]) {
-
-  No **arvore_binaria = loadTreeFromFile("resources/BSTs/bst2.txt");
-  printf("\n\nAltura da árvore: %d\n", getHeight(arvore_binaria));
-  acessaMenu();
-
+  No **arvore_binaria;
+  acessaMenu(arvore_binaria);
   return 0;
 }
 
@@ -94,11 +97,36 @@ int insere_no(No **raiz, int valor){
   return 1;
 }
 
+int arvoreNula(No **raiz){
+  if (raiz == NULL)
+    return 1;
+  if (*raiz == NULL)
+    return 1;
+  return 0;
+}
+
+void liberaNo(No *no){
+  if (no == NULL)
+    return;
+  liberaNo(no->esquerda);
+  liberaNo(no->direita);
+  free(no);
+  no = NULL;
+}
+
+void liberaArvore(No **raiz){
+  if (raiz == NULL){
+    return;
+  liberaNo(*raiz);
+  free(raiz);
+  }
+}
+
 void doMenu(){
-  printf("----------------------------------------------------------------------\n" );
-  printf("\t\tBinary Tree\n" );
+  printf("\n\n----------------------------------------------------------------------\n" );
+  printf("\t\t\tBinary Tree\n" );
   printf("----------------------------------------------------------------------\n\n" );
-  printf("Menu de opções\n" );
+  printf("\tMENU DE OPÇÕES\n\n" );
   printf("0 - LoadTreeFromFile \n" );
   printf("1 - ShowTree \n" );
   printf("2 - IsFull \n" );
@@ -109,17 +137,25 @@ void doMenu(){
   printf("7 - PrintPostOrder \n" );
   printf("8 - BalanceTree \n" );
   printf("9 - Sair do Programa\n" );
+  printf("----------------------------------------------------------------------\n" );
   printf("Escolha uma ação e digite seu número correspondente: " );
 }
 
-void acessaMenu(){
+void acessaMenu(No **arvore_binaria){
   char item_selecionado = 'I';
+  char url[40];
   doMenu();
   while (item_selecionado != '9'){
     scanf(" %c", &item_selecionado);
     switch (item_selecionado) {
       case '0':
-        // LoadTreeFromFile
+        if (arvoreNula(arvore_binaria) == 0){
+          printf("Apagando árvore atual...\n");
+          liberaArvore(arvore_binaria);
+        }
+        printf("Digite o caminho do arquivo: ");
+        scanf("%s", url);
+        arvore_binaria = loadTreeFromFile(url);
         doMenu();
         break;
       case '1':
@@ -131,7 +167,11 @@ void acessaMenu(){
         doMenu();
         break;
       case '3':
-        // GetHeight
+        if (arvoreNula(arvore_binaria)){
+          printf("A árvore é nula, portando sua altura é nula\n" );
+        }else{
+          printf("A altura da arvore é: %d\n", getHeight(arvore_binaria));
+        }
         doMenu();
         break;
       case '4':
@@ -155,7 +195,7 @@ void acessaMenu(){
         doMenu();
         break;
       case '9':
-        	// Sair do Programa
+        	printf("\nSaindo do programa... Até a proxima!\n" );
         break;
       default:
         printf("\nEntrada inválida! Digite novamente: ");
