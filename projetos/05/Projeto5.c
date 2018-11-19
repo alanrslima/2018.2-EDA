@@ -3,6 +3,8 @@
 #include <time.h>
 #include <string.h>
 
+#define espaco 5
+
 typedef struct no{
   int numero;
   struct no *esquerda;
@@ -16,6 +18,12 @@ void printInOrder(No **raiz);
 void printPosOrder(No **raiz);
 int removeValue(No **raiz, int valor);
 int isFull(No **raiz);
+
+void desenha_arvore_horiz(No *arvore, int depth, char *path, int direita);
+void draw_arvore_hor(No **arvore);
+
+void padding ( char ch, int n );
+void structure (No **root, int level );
 
 No *removeAtual(No *atual);
 void printTree(No **raiz, char *prefix);
@@ -255,8 +263,9 @@ int totalNos(No **raiz){
   return (altura_esquerda + altura_direita + 1);
 }
 
+
 void doMenu(){
-  printf("\n\n----------------------------------------------------------------------\n" );
+  printf("\n\n\n\n----------------------------------------------------------------------\n" );
   printf("\t\t\tBinary Tree\n" );
   printf("----------------------------------------------------------------------\n\n" );
   printf("\tMENU DE OPÇÕES\n\n" );
@@ -293,7 +302,8 @@ void acessaMenu(No **arvore_binaria){
         doMenu();
         break;
       case '1':
-      	// ShowTree
+      	draw_arvore_hor(arvore_binaria);
+        // structure (arvore_binaria, 0 );
         doMenu();
         break;
       case '2':
@@ -340,5 +350,76 @@ void acessaMenu(No **arvore_binaria){
       default:
         printf("\nEntrada inválida! Digite novamente: ");
     }
+  }
+}
+
+
+
+// FUNÇÕES DE SHOW TREE
+
+
+void desenha_arvore_horiz(No *arvore, int depth, char *path, int direita){
+    if (arvore== NULL)
+        return;
+    depth++;
+
+    desenha_arvore_horiz(arvore->direita, depth, path, 1);
+    path[depth-2] = 0;
+
+    if(direita)
+        path[depth-2] = 1;
+    if(arvore->esquerda)
+        path[depth-1] = 1;
+    printf("\n");
+    for(int i=0; i<depth-1; i++){
+      if(i == depth-2)
+          printf("+");
+      else if(path[i])
+          printf("|");
+      else
+          printf(" ");
+
+    for(int j=1; j<espaco; j++)
+      if(i < depth-2)
+          printf(" ");
+      else
+          printf("-");
+    }
+    printf("%d\n", arvore->numero);
+    for(int i=0; i<depth; i++){
+      if(path[i])
+          printf("|");
+      else
+          printf(" ");
+      for(int j=1; j<espaco; j++)
+          printf(" ");
+    }
+    desenha_arvore_horiz(arvore->esquerda, depth, path, 0);
+}
+
+void draw_arvore_hor(No **arvore)
+{
+    char path[255] = {};
+    desenha_arvore_horiz(*arvore, 0, path, 0);
+}
+
+
+
+void padding ( char ch, int n ){
+  for (int i = 0; i < n; i++ )
+    putchar ( ch );
+}
+
+void structure (No **root, int level ){
+  int i;
+  if ( *root == NULL ) {
+    padding ( '\t', level );
+    puts ( "~" );
+  }
+  else {
+    structure (&(*root)->direita, level + 1 );
+    padding ( '\t', level );
+    printf ( "%d\n", (*root)->numero );
+    structure ( &(*root)->esquerda, level + 1 );
   }
 }
