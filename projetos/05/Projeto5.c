@@ -15,6 +15,7 @@ void printPreOrder(No **raiz);
 void printInOrder(No **raiz);
 void printPosOrder(No **raiz);
 int removeValue(No **raiz, int valor);
+int isFull(No **raiz);
 
 No *removeAtual(No *atual);
 void printTree(No **raiz, char *prefix);
@@ -177,6 +178,22 @@ void printTree(No **raiz, char *prefix){
   }
 }
 
+int isFull(No **raiz){
+  if (arvoreNula(raiz))
+    return 0;
+  // Caso tenha apenas um elemento
+	if (((*raiz)->esquerda == NULL) && ((*raiz)->direita == NULL))
+		return 1;
+
+	if (((*raiz)->esquerda) && ((*raiz)->direita))
+		 if (isFull(&((*raiz)->esquerda)) && isFull(&((*raiz)->direita))) {
+       return 1;
+     }
+
+  return 0;
+}
+
+
 int removeValue(No **raiz, int valor){
   if (raiz == NULL)
     return 0;
@@ -280,7 +297,12 @@ void acessaMenu(No **arvore_binaria){
         doMenu();
         break;
       case '2':
-      	// IsFull
+      	if (isFull(arvore_binaria)){
+          printf("A árvore é cheia!\n" );
+        }else{
+          printf("A árvore não é cheia!\n" );
+        }
+        doMenu();
         break;
       case '3':
           printf("Altura da árvore = %d\n", getHeight(arvore_binaria));
