@@ -359,7 +359,7 @@ void acessaMenu(No **arvore_binaria){
 
 
 void desenha_arvore_horiz(No *arvore, int depth, char *path, int direita){
-    if (arvore== NULL)
+    if (arvore == NULL)
         return;
     depth++;
 
@@ -399,11 +399,13 @@ void desenha_arvore_horiz(No *arvore, int depth, char *path, int direita){
 
 void draw_arvore_hor(No **arvore)
 {
+    if (arvoreNula(arvore)){
+      printf("Atenção! Árvore NULA\n");
+      return;
+    }
     char path[255] = {};
     desenha_arvore_horiz(*arvore, 0, path, 0);
 }
-
-
 
 void padding ( char ch, int n ){
   for (int i = 0; i < n; i++ )
