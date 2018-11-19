@@ -14,7 +14,9 @@ int getHeight(No **raiz);
 void printPreOrder(No **raiz);
 void printInOrder(No **raiz);
 void printPosOrder(No **raiz);
+int removeValue(No **raiz, int valor);
 
+No *removeAtual(No *atual);
 void printTree(No **raiz, char *prefix);
 int totalNos(No **raiz);
 int insereNo(No **raiz, int valor);
@@ -107,7 +109,7 @@ void printPreOrder(No **raiz){
   if (raiz == NULL)
     return;
   if (*raiz != NULL){
-    printf("%d\n", (*raiz)->numero);
+    printf("%d, ", (*raiz)->numero);
     printPreOrder(&((*raiz)->esquerda));
     printPreOrder(&((*raiz)->direita));
   }
@@ -119,7 +121,7 @@ void printPosOrder(No **raiz){
   if (*raiz != NULL){
     printPreOrder(&((*raiz)->esquerda));
     printPreOrder(&((*raiz)->direita));
-    printf("%d\n", (*raiz)->numero);
+    printf("%d, ", (*raiz)->numero);
   }
 }
 
@@ -128,7 +130,7 @@ void printInOrder(No **raiz){
     return;
   if (*raiz != NULL){
     printInOrder(&((*raiz)->esquerda));
-    printf("%d\n", (*raiz)->numero);
+    printf("%d, ", (*raiz)->numero);
     printPreOrder(&((*raiz)->direita));
   }
 }
@@ -175,6 +177,56 @@ void printTree(No **raiz, char *prefix){
   }
 }
 
+int removeValue(No **raiz, int valor){
+  if (raiz == NULL)
+    return 0;
+  No *anterior = NULL;
+  No *atual = *raiz;
+  while (atual != NULL){
+    if (valor == atual->numero){
+      if (atual == *raiz)
+        *raiz = removeAtual(atual);
+      else{
+        if (anterior->direita == atual)
+          anterior->direita = removeAtual(atual);
+        else
+          anterior->esquerda = removeAtual(atual);
+      }
+      return 1;
+    }
+    anterior = atual;
+    if (valor > atual->numero)
+      atual = atual->direita;
+    else
+      atual = atual->esquerda;
+  }
+  return 0;
+}
+
+No *removeAtual(No *atual){
+  No *no1, *no2;
+  // Trata o caso do no removido ser nó folha ou com um filho
+  if (atual->esquerda == NULL){
+    no2 = atual->direita;
+    free(atual);
+    return no2;
+  }
+  no1 = atual;
+  no2 = atual->esquerda;
+  // Procura filho mais a direita na sub-arvore da esquerda
+  while (no2->direita != NULL){
+    no1 = no2;
+    no2 = no2->direita;
+  }
+  // Copia o filho mais da direita na sub-arvore da esquerda para o lugar do nó removido
+  if (no1 != atual){
+    no1->direita = no2->esquerda;
+    no2->esquerda = atual->esquerda;
+  }
+  no2->direita = atual->direita;
+  free(atual);
+  return no2;
+}
 
 int totalNos(No **raiz){
   if (raiz == NULL)
@@ -208,6 +260,7 @@ void doMenu(){
 void acessaMenu(No **arvore_binaria){
   char item_selecionado = 'I';
   char url[40];
+  int numero_removido;
   doMenu();
   while (item_selecionado != '9'){
     scanf(" %c", &item_selecionado);
@@ -227,15 +280,20 @@ void acessaMenu(No **arvore_binaria){
         doMenu();
         break;
       case '2':
-      	printf("Quantidade de nós na árvore = %d\n", totalNos(arvore_binaria));
-        doMenu();
+      	// IsFull
         break;
       case '3':
-          printf("A altura da arvore = %d\n", getHeight(arvore_binaria));
+          printf("Altura da árvore = %d\n", getHeight(arvore_binaria));
         doMenu();
         break;
       case '4':
-      	// RemoveValue
+        printf("Digite o número a ser removido da árvore: ");
+        scanf("%d", &numero_removido);
+        if (removeValue(arvore_binaria, numero_removido)){
+          printf("Nó removido com sucesso!\n" );
+        }else{
+          printf("Valor não está presente na árvore!\n" );
+        }
         doMenu();
         break;
       case '5':
