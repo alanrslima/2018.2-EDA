@@ -4,7 +4,6 @@
 
 typedef struct no{
   int numero;
-  int altura;
   struct no *esquerda;
   struct no *direita;
 }No;
@@ -30,6 +29,8 @@ void liberaNo(No *no);
 char **criaMatrizShow(int altura);
 void printaMatrizShow(char **show, int altura);
 int salvaMatrizShow(No **raiz, char **show, int direcao_esquerda, int deslocamento, int nivel );
+int arvoreBalanceada(No **raiz);
+int checkBalance(No **raiz);
 
 // Funções criação de Menu
 void doMenu();
@@ -370,7 +371,11 @@ void acessaMenu(No **arvore_binaria){
         doMenu();
         break;
       case '9':
-        // BalanceTree
+        if (arvoreBalanceada(arvore_binaria))
+          printf("A árvore já está balanceada!\n" );
+        else{
+          printf("A árvore não está balanceada!\n" );
+        }
         doMenu();
         break;
       case 'E':
@@ -439,4 +444,16 @@ int salvaMatrizShow(No **raiz, char **show, int direcao_esquerda, int deslocamen
     show[2 * nivel - 1][deslocamento - largura/2 - 1] = ':';
   }
   return esquerda + largura + direita;
+}
+
+int arvoreBalanceada(No **raiz){
+  if (arvoreNula(raiz)){
+    printf("ERROR: Árvore vazia!\n");
+    return 1;
+  }
+  if(abs(getHeight(&(*raiz)->esquerda) - getHeight(&(*raiz)->direita)) > 1){
+    return 0; // Não balanceada
+  }else{
+    return 1; // Balanceada
+  }
 }
