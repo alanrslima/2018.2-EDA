@@ -1,9 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
 #include <string.h>
-
-#define espaco 5
 
 typedef struct no{
   int numero;
@@ -21,6 +18,7 @@ void printPosOrder(No **raiz);
 int removeValue(No **raiz, int valor);
 int isFull(No **raiz);
 void showTree(No **raiz);
+int searchValue(No **raiz, int valor);
 
 // Funções auxiliares
 No *removeAtual(No *atual);
@@ -261,6 +259,43 @@ int totalNos(No **raiz){
   return (altura_esquerda + altura_direita + 1);
 }
 
+int searchValue(No **raiz, int valor){
+  if (arvoreNula(raiz))
+    return 0;
+  int nivel = 0;
+  No *atual = *raiz;
+  No *pai = NULL;
+  while (atual != NULL){
+    nivel++;
+    if (valor == atual->numero){
+      printf("Nível do nó = %d\n", nivel);
+      if (pai == NULL){
+        printf("O valor é raiz da árvore, portanto não tem pai e nem irmão\n");
+      }else{
+        printf("Valor do pai = %d\n", pai->numero);
+        if (pai->esquerda){
+          if (pai->esquerda->numero != atual->numero)
+            printf("Seu irmão está a esquerda e seu valor é = %d\n", pai->esquerda->numero);
+        }
+        if (pai->direita){
+          if (pai->direita->numero != atual->numero)
+            printf("Seu irmão está a direita e seu valor é = %d\n", pai->direita->numero);
+        }
+        if (!pai->direita || !pai->esquerda)
+          printf("Este nó não tem irmão!\n" );
+      }
+
+      return 1;
+    }
+    pai = atual;
+    if (valor > atual->numero)
+      atual = atual->direita;
+    else
+      atual = atual->esquerda;
+  }
+  return 0;
+}
+
 void doMenu(){
   printf("\n\n\n\n----------------------------------------------------------------------\n" );
   printf("\t\t\tBinary Tree\n" );
@@ -284,7 +319,7 @@ void doMenu(){
 void acessaMenu(No **arvore_binaria){
   char item_selecionado = 'I';
   char url[40];
-  int numero_removido;
+  int numero_removido, numero_buscado;
   arvore_binaria = loadTreeFromFile("resources/BSTs/bst1.txt");
   doMenu();
   while (item_selecionado != 'E'){
@@ -313,7 +348,12 @@ void acessaMenu(No **arvore_binaria){
         doMenu();
         break;
       case '3':
-          // searchValue
+        printf("Digite o número a ser buscado na árvore: ");
+        scanf("%d", &numero_buscado);
+        if (!searchValue(arvore_binaria, numero_buscado)){
+          printf("Este valor não esta presente na árvore!\n" );
+        }
+        doMenu();
         break;
       case '4':
         printf("Altura da árvore = %d\n", getHeight(arvore_binaria));
