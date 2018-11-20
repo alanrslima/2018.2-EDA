@@ -168,7 +168,7 @@ void liberaArvore(No **raiz){
 
 void printTree(No **raiz, char *prefix){
   if (arvoreNula(raiz)){
-    printf("A árvore é NULA\n" );
+    printf("ATENÇÃO! A árvore está vazia!\n" );
     return;
   }else{
     if (strcmp(prefix, "Pos") == 0){
@@ -324,36 +324,55 @@ void acessaMenu(No **arvore_binaria){
         doMenu();
         break;
       case '1':
-        showTree(arvore_binaria);
+        if (arvoreNula(arvore_binaria))
+          printf("ATENÇÃO! A árvore está vazia!\n" );
+        else{
+          showTree(arvore_binaria);
+        }
         doMenu();
         break;
       case '2':
-      	if (isFull(arvore_binaria)){
-          printf("A árvore é cheia!\n" );
-        }else{
-          printf("A árvore não é cheia!\n" );
+        if (arvoreNula(arvore_binaria))
+          printf("ATENÇÃO! A árvore está vazia!\n" );
+        else{
+          if (isFull(arvore_binaria))
+            printf("A árvore é cheia!\n" );
+          else
+            printf("A árvore não é cheia!\n" );
         }
         doMenu();
         break;
       case '3':
-        printf("Digite o número a ser buscado na árvore: ");
-        scanf("%d", &numero_buscado);
-        if (!searchValue(arvore_binaria, numero_buscado)){
-          printf("Este valor não esta presente na árvore!\n" );
+        if (arvoreNula(arvore_binaria))
+        printf("ATENÇÃO! A árvore está vazia!\n" );
+        else{
+          printf("Digite o número a ser buscado na árvore: ");
+          scanf("%d", &numero_buscado);
+          if (!searchValue(arvore_binaria, numero_buscado)){
+            printf("Este valor não esta presente na árvore!\n" );
+          }
         }
         doMenu();
         break;
       case '4':
-        printf("Altura da árvore = %d\n", getHeight(arvore_binaria));
+        if (arvoreNula(arvore_binaria))
+          printf("ATENÇÃO! A árvore está vazia!\n" );
+        else{
+          printf("Altura da árvore = %d\n", getHeight(arvore_binaria));
+        }
         doMenu();
         break;
       case '5':
-        printf("Digite o número a ser removido da árvore: ");
-        scanf("%d", &numero_removido);
-        if (removeValue(arvore_binaria, numero_removido)){
-          printf("Nó removido com sucesso!\n" );
-        }else{
-          printf("Valor não está presente na árvore!\n" );
+        if (arvoreNula(arvore_binaria))
+          printf("ATENÇÃO! A árvore está vazia!\n" );
+        else{
+          printf("Digite o número a ser removido da árvore: ");
+          scanf("%d", &numero_removido);
+          if (removeValue(arvore_binaria, numero_removido)){
+            printf("Nó removido com sucesso!\n" );
+          }else{
+            printf("Valor não está presente na árvore!\n" );
+          }
         }
         doMenu();
         break;
@@ -370,10 +389,14 @@ void acessaMenu(No **arvore_binaria){
         doMenu();
         break;
       case '9':
-        if (arvoreBalanceada(arvore_binaria))
-          printf("A árvore já está balanceada!\n" );
+        if (arvoreNula(arvore_binaria))
+          printf("ATENÇÃO! A árvore está vazia!\n" );
         else{
-          printf("A árvore não está balanceada!\n" );
+        if (arvoreBalanceada(arvore_binaria))
+            printf("A árvore já está balanceada!\n" );
+          else{
+            printf("A árvore não está balanceada!\n" );
+          }
         }
         doMenu();
         break;
@@ -446,10 +469,6 @@ int salvaMatrizShow(No **raiz, char **show, int direcao_esquerda, int deslocamen
 }
 
 int arvoreBalanceada(No **raiz){
-  if (arvoreNula(raiz)){
-    printf("ERROR: Árvore vazia!\n");
-    return 1;
-  }
   if(abs(getHeight(&(*raiz)->esquerda) - getHeight(&(*raiz)->direita)) > 1){
     return 0; // Não balanceada
   }else{
