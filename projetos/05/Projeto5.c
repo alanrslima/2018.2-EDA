@@ -30,7 +30,6 @@ char **criaMatrizShow(int altura);
 void printaMatrizShow(char **show, int altura);
 int salvaMatrizShow(No **raiz, char **show, int direcao_esquerda, int deslocamento, int nivel );
 int arvoreBalanceada(No **raiz);
-int checkBalance(No **raiz);
 
 // Funções criação de Menu
 void doMenu();
