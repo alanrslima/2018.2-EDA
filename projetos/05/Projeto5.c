@@ -7,10 +7,12 @@
 
 typedef struct no{
   int numero;
+  int altura;
   struct no *esquerda;
   struct no *direita;
 }No;
 
+// Funções obrigatorias
 No **loadTreeFromFile(char *url);
 int getHeight(No **raiz);
 void printPreOrder(No **raiz);
@@ -18,13 +20,9 @@ void printInOrder(No **raiz);
 void printPosOrder(No **raiz);
 int removeValue(No **raiz, int valor);
 int isFull(No **raiz);
+void showTree(No **raiz);
 
-void desenha_arvore_horiz(No *arvore, int depth, char *path, int direita);
-void draw_arvore_hor(No **arvore);
-
-void padding ( char ch, int n );
-void structure (No **root, int level );
-
+// Funções auxiliares
 No *removeAtual(No *atual);
 void printTree(No **raiz, char *prefix);
 int totalNos(No **raiz);
@@ -32,6 +30,7 @@ int insereNo(No **raiz, int valor);
 int arvoreNula(No **raiz);
 void liberaArvore(No **raiz);
 void liberaNo(No *no);
+int saveTree(No **root, int is_left, int offset, int depth, char **s);
 
 // Funções criação de Menu
 void doMenu();
@@ -67,9 +66,7 @@ No **loadTreeFromFile(char *url){
 }
 
 int getHeight(No **raiz){
-  if (raiz == NULL)
-    return 0;
-  if (*raiz == NULL)
+  if (arvoreNula(raiz))
     return 0;
   int altura_esquerda = getHeight(&((*raiz)->esquerda));
   int altura_direita = getHeight(&((*raiz)->direita));
@@ -201,7 +198,6 @@ int isFull(No **raiz){
   return 0;
 }
 
-
 int removeValue(No **raiz, int valor){
   if (raiz == NULL)
     return 0;
@@ -263,7 +259,6 @@ int totalNos(No **raiz){
   return (altura_esquerda + altura_direita + 1);
 }
 
-
 void doMenu(){
   printf("\n\n\n\n----------------------------------------------------------------------\n" );
   printf("\t\t\tBinary Tree\n" );
@@ -276,7 +271,7 @@ void doMenu(){
   printf("4 - RemoveValue \n" );
   printf("5 - PrintInOrder \n" );
   printf("6 - PrintPreOrder \n" );
-  printf("7 - PrintPostOrder \n" );
+  printf("7 - PrintPosOrder \n" );
   printf("8 - BalanceTree \n" );
   printf("9 - Sair do Programa\n" );
   printf("----------------------------------------------------------------------\n" );
@@ -287,6 +282,7 @@ void acessaMenu(No **arvore_binaria){
   char item_selecionado = 'I';
   char url[40];
   int numero_removido;
+  arvore_binaria = loadTreeFromFile("resources/BSTs/bst1.txt");
   doMenu();
   while (item_selecionado != '9'){
     scanf(" %c", &item_selecionado);
@@ -302,8 +298,7 @@ void acessaMenu(No **arvore_binaria){
         doMenu();
         break;
       case '1':
-      	draw_arvore_hor(arvore_binaria);
-        // structure (arvore_binaria, 0 );
+        showTree(arvore_binaria);
         doMenu();
         break;
       case '2':
@@ -353,75 +348,58 @@ void acessaMenu(No **arvore_binaria){
   }
 }
 
+void showTree(No **root) {
+  int tam = ((getHeight(root) * 2) + 1);
 
+  char **show = (char **)malloc( tam * sizeof(char *));
+	for (int i = 0; i < tam; i++) {
+		show[i] = (char *)malloc(255 * sizeof(char));
+		sprintf(show[i], "%80s", " ");
+	}
+	saveTree(root, 0, 0, 0, show);
 
-// FUNÇÕES DE SHOW TREE
-
-
-void desenha_arvore_horiz(No *arvore, int depth, char *path, int direita){
-    if (arvore == NULL)
-        return;
-    depth++;
-
-    desenha_arvore_horiz(arvore->direita, depth, path, 1);
-    path[depth-2] = 0;
-
-    if(direita)
-        path[depth-2] = 1;
-    if(arvore->esquerda)
-        path[depth-1] = 1;
+	for (int i = 0; i < tam; i++) {
+    int tamStr = strlen(show[i]);
+    for(int j = 0; j < tamStr; j++){
+        printf("%c", show[i][j]);
+    }
     printf("\n");
-    for(int i=0; i<depth-1; i++){
-      if(i == depth-2)
-          printf("+");
-      else if(path[i])
-          printf("|");
-      else
-          printf(" ");
-
-    for(int j=1; j<espaco; j++)
-      if(i < depth-2)
-          printf(" ");
-      else
-          printf("-");
-    }
-    printf("%d\n", arvore->numero);
-    for(int i=0; i<depth; i++){
-      if(path[i])
-          printf("|");
-      else
-          printf(" ");
-      for(int j=1; j<espaco; j++)
-          printf(" ");
-    }
-    desenha_arvore_horiz(arvore->esquerda, depth, path, 0);
-}
-
-void draw_arvore_hor(No **arvore)
-{
-    if (arvoreNula(arvore)){
-      printf("Atenção! Árvore NULA\n");
-      return;
-    }
-    char path[255] = {};
-    desenha_arvore_horiz(*arvore, 0, path, 0);
-}
-
-void padding ( char ch, int n ){
-  for (int i = 0; i < n; i++ )
-    putchar ( ch );
-}
-
-void structure (No **root, int level ){
-  int i;
-  if ( *root == NULL ) {
-    padding ( '\t', level );
-    puts ( "~" );
   }
-  else {
-    structure (&(*root)->direita, level + 1 );
-    padding ( '\t', level );
-    printf ( "%d\n", (*root)->numero );
-    structure ( &(*root)->esquerda, level + 1 );
-  }
+
+    for (int i = 0; i < tam; i++)
+        free(show[i]);
+    free(show);
+}
+
+int saveTree(No **root, int is_left, int offset, int depth, char **s) {
+    char b[20];
+    int width = 5;
+
+    if (!(*root))
+      return 0;
+
+    sprintf(b, " %3d ", (*root)->numero);
+
+    int left  = saveTree(&((*root)->esquerda),  1, offset, depth + 1, s);
+    int right = saveTree(&((*root)->direita), 0, offset + left + width, depth + 1, s);
+
+    for (int i = 0; i < width; i++)
+        s[2 * depth][offset + left + i] = b[i];
+
+    if (depth && is_left) {
+
+        for (int i = 0; i < width + right; i++)
+            s[2 * depth - 1][offset + left + width/2 + i] = '*';
+
+        s[2 * depth - 1][offset + left + width/2] = '/';
+        s[2 * depth - 1][offset + left + width + right + width/2] = ':';
+
+    } else if (depth && !is_left) {
+        for (int i = 0; i < left + width; i++)
+            s[2 * depth - 1][offset - width/2 + i] = '*';
+
+        s[2 * depth - 1][offset + left + width/2] = 92;
+        s[2 * depth - 1][offset - width/2 - 1] = ':';
+    }
+    return left + width + right;
 }
