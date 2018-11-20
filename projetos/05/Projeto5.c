@@ -309,7 +309,6 @@ void acessaMenu(No **arvore_binaria){
   char item_selecionado = 'I';
   char url[40];
   int numero_removido, numero_buscado;
-  arvore_binaria = loadTreeFromFile("resources/BSTs/bst1.txt");
   doMenu();
   while (item_selecionado != 'E'){
     scanf(" %c", &item_selecionado);
