@@ -31,9 +31,13 @@ void printaMatrizShow(char **show, int altura);
 int salvaMatrizShow(No **raiz, char **show, int direcao_esquerda, int deslocamento, int nivel );
 int arvoreBalanceada(No **raiz);
 
+
 // Funções criação de Menu
 void doMenu();
 void acessaMenu(No **arvore_binaria);
+void doMenuArquivos();
+char *acessaMenuArquivos();
+
 
 int main(int argc, char const *argv[]) {
   No **arvore_binaria;
@@ -304,22 +308,68 @@ void doMenu(){
   printf("Escolha uma ação e digite seu número correspondente: " );
 }
 
+void doMenuArquivos(){
+  printf("\n\n\n\n----------------------------------------------------------------------\n" );
+  printf("\t\t\tArquivos BST\n" );
+  printf("----------------------------------------------------------------------\n\n" );
+  printf("\tARQUIVOS DISPONÍVEIS\n\n" );
+  printf("1 - bst1.txt \n" );
+  printf("2 - bst2.txt \n" );
+  printf("3 - bst3.txt \n" );
+  printf("4 - bst4.txt \n" );
+  printf("5 - bst5.txt \n" );
+  printf("6 - bst6.txt \n" );
+  printf("----------------------------------------------------------------------\n" );
+  printf("Escolha um arquivo e digite seu número correspondente: " );
+}
+
+char *acessaMenuArquivos(){
+  char item_selecionado = '0';
+  doMenuArquivos();
+  scanf(" %c", &item_selecionado);
+  switch (item_selecionado) {
+    case '1':
+      return "resources/BSTs/bst1.txt";
+      break;
+    case '2':
+      return "resources/BSTs/bst2.txt";
+      break;
+    case '3':
+      return "resources/BSTs/bst3.txt";
+      break;
+    case '4':
+      return "resources/BSTs/bst4.txt";
+      break;
+    case '5':
+      return "resources/BSTs/bst5.txt";
+      break;
+    case '6':
+      return "resources/BSTs/bst6.txt";
+      break;
+    default:
+      return "Abort";
+  }
+}
+
 void acessaMenu(No **arvore_binaria){
   char item_selecionado = 'I';
-  char url[40];
+  char *url;
   int numero_removido, numero_buscado;
   doMenu();
   while (item_selecionado != 'E'){
     scanf(" %c", &item_selecionado);
     switch (item_selecionado) {
       case '0':
-        if (arvoreNula(arvore_binaria) == 0){
-          printf("Apagando árvore atual...\n");
-          liberaArvore(arvore_binaria);
+        url = acessaMenuArquivos();
+        if (strcmp(url, "Abort") == 0){
+          printf("Arquivo inválido! \n");
+        }else{
+          if (arvoreNula(arvore_binaria) == 0){
+            printf("Apagando árvore atual...\n");
+            liberaArvore(arvore_binaria);
+          }
+          arvore_binaria = loadTreeFromFile(url);
         }
-        printf("Digite o caminho do arquivo: ");
-        scanf("%s", url);
-        arvore_binaria = loadTreeFromFile(url);
         doMenu();
         break;
       case '1':
@@ -400,6 +450,10 @@ void acessaMenu(No **arvore_binaria){
         doMenu();
         break;
       case 'E':
+        if (!arvoreNula(arvore_binaria)){
+          printf("Apagando árvore ...\n");
+          liberaArvore(arvore_binaria);
+        }
         printf("\nSaindo do programa... Até a proxima!\n" );
         break;
       default:
