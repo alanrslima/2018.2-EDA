@@ -267,13 +267,14 @@ void doMenu(){
   printf("0 - LoadTreeFromFile \n" );
   printf("1 - ShowTree \n" );
   printf("2 - IsFull \n" );
-  printf("3 - GetHeight \n" );
-  printf("4 - RemoveValue \n" );
-  printf("5 - PrintInOrder \n" );
-  printf("6 - PrintPreOrder \n" );
-  printf("7 - PrintPosOrder \n" );
-  printf("8 - BalanceTree \n" );
-  printf("9 - Sair do Programa\n" );
+  printf("3 - searchValue\n" );
+  printf("4 - GetHeight \n" );
+  printf("5 - RemoveValue \n" );
+  printf("6 - PrintInOrder \n" );
+  printf("7 - PrintPreOrder \n" );
+  printf("8 - PrintPosOrder \n" );
+  printf("9 - BalanceTree \n" );
+  printf("E - Sair do Programa\n" );
   printf("----------------------------------------------------------------------\n" );
   printf("Escolha uma ação e digite seu número correspondente: " );
 }
@@ -284,7 +285,7 @@ void acessaMenu(No **arvore_binaria){
   int numero_removido;
   arvore_binaria = loadTreeFromFile("resources/BSTs/bst1.txt");
   doMenu();
-  while (item_selecionado != '9'){
+  while (item_selecionado != 'E'){
     scanf(" %c", &item_selecionado);
     switch (item_selecionado) {
       case '0':
@@ -310,10 +311,13 @@ void acessaMenu(No **arvore_binaria){
         doMenu();
         break;
       case '3':
-          printf("Altura da árvore = %d\n", getHeight(arvore_binaria));
-        doMenu();
+          // searchValue
         break;
       case '4':
+        printf("Altura da árvore = %d\n", getHeight(arvore_binaria));
+        doMenu();
+        break;
+      case '5':
         printf("Digite o número a ser removido da árvore: ");
         scanf("%d", &numero_removido);
         if (removeValue(arvore_binaria, numero_removido)){
@@ -323,24 +327,24 @@ void acessaMenu(No **arvore_binaria){
         }
         doMenu();
         break;
-      case '5':
+      case '6':
         printTree(arvore_binaria, "In");
         doMenu();
         break;
-      case '6':
+      case '7':
         printTree(arvore_binaria, "Pre");
         doMenu();
         break;
-      case '7':
+      case '8':
         printTree(arvore_binaria, "Pos");
         doMenu();
         break;
-      case '8':
-          // BalanceTree
+      case '9':
+        // BalanceTree
         doMenu();
         break;
-      case '9':
-        	printf("\nSaindo do programa... Até a proxima!\n" );
+      case 'E':
+        printf("\nSaindo do programa... Até a proxima!\n" );
         break;
       default:
         printf("\nEntrada inválida! Digite novamente: ");
@@ -349,16 +353,16 @@ void acessaMenu(No **arvore_binaria){
 }
 
 void showTree(No **root) {
-  int tam = ((getHeight(root) * 2) + 1);
+  int tamanho = ((getHeight(root) * 2) + 1);
 
-  char **show = (char **)malloc( tam * sizeof(char *));
-	for (int i = 0; i < tam; i++) {
+  char **show = (char **)malloc( tamanho * sizeof(char *));
+	for (int i = 0; i < tamanho; i++) {
 		show[i] = (char *)malloc(255 * sizeof(char));
 		sprintf(show[i], "%80s", " ");
 	}
 	saveTree(root, 0, 0, 0, show);
 
-	for (int i = 0; i < tam; i++) {
+	for (int i = 0; i < tamanho; i++) {
     int tamStr = strlen(show[i]);
     for(int j = 0; j < tamStr; j++){
         printf("%c", show[i][j]);
@@ -366,7 +370,7 @@ void showTree(No **root) {
     printf("\n");
   }
 
-    for (int i = 0; i < tam; i++)
+    for (int i = 0; i < tamanho; i++)
         free(show[i]);
     free(show);
 }
