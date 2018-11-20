@@ -128,8 +128,8 @@ void printPosOrder(No **raiz){
   if (raiz == NULL)
     return;
   if (*raiz != NULL){
-    printPreOrder(&((*raiz)->esquerda));
-    printPreOrder(&((*raiz)->direita));
+    printPosOrder(&((*raiz)->esquerda));
+    printPosOrder(&((*raiz)->direita));
     printf("%d, ", (*raiz)->numero);
   }
 }
@@ -140,7 +140,7 @@ void printInOrder(No **raiz){
   if (*raiz != NULL){
     printInOrder(&((*raiz)->esquerda));
     printf("%d, ", (*raiz)->numero);
-    printPreOrder(&((*raiz)->direita));
+    printInOrder(&((*raiz)->direita));
   }
 }
 
