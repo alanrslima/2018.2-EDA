@@ -30,7 +30,9 @@ int insereNo(No **raiz, int valor);
 int arvoreNula(No **raiz);
 void liberaArvore(No **raiz);
 void liberaNo(No *no);
-int saveTree(No **root, int is_left, int offset, int depth, char **s);
+char **criaMatrizShow(int altura);
+void printaMatrizShow(char **show, int altura);
+int salvaMatrizShow(No **raiz, char **show, int direcao_esquerda, int deslocamento, int nivel );
 
 // Funções criação de Menu
 void doMenu();
@@ -352,58 +354,61 @@ void acessaMenu(No **arvore_binaria){
   }
 }
 
-void showTree(No **root) {
-  int tamanho = ((getHeight(root) * 2) + 1);
+void showTree(No **raiz) {
+  int altura = ((getHeight(raiz) * 2) + 1);
+  char **matriz_show = criaMatrizShow(altura);
+	salvaMatrizShow(raiz, matriz_show, 0, 0, 0);
+  printaMatrizShow(matriz_show, altura);
+  // Libera Matriz de show
+  for (int i = 0; i < altura; i++)
+    free(matriz_show[i]);
+  free(matriz_show);
+}
 
-  char **show = (char **)malloc( tamanho * sizeof(char *));
-	for (int i = 0; i < tamanho; i++) {
-		show[i] = (char *)malloc(255 * sizeof(char));
-		sprintf(show[i], "%80s", " ");
-	}
-	saveTree(root, 0, 0, 0, show);
+char **criaMatrizShow(int altura){
+  char **show = (char **)malloc(altura*sizeof(char *));
+  for (int i = 0; i < altura; i++) {
+    show[i] = (char *)malloc(150 * sizeof(char));
+    sprintf(show[i], "%100s", "");
+  }
+  return show;
+}
 
-	for (int i = 0; i < tamanho; i++) {
-    int tamStr = strlen(show[i]);
-    for(int j = 0; j < tamStr; j++){
+void printaMatrizShow(char **show, int altura){
+  for (int i = 0; i < altura; i++) {
+    for(int j = 0; j < 100; j++){
         printf("%c", show[i][j]);
     }
     printf("\n");
   }
-
-    for (int i = 0; i < tamanho; i++)
-        free(show[i]);
-    free(show);
 }
 
-int saveTree(No **root, int is_left, int offset, int depth, char **s) {
-    char b[20];
-    int width = 5;
+int salvaMatrizShow(No **raiz, char **show, int direcao_esquerda, int deslocamento, int nivel) {
+  int largura = 5;
+  char valores[10];
 
-    if (!(*root))
-      return 0;
+  if ((*raiz) == NULL)
+    return 0;
+  sprintf(valores, " %3d ", (*raiz)->numero);
+  int esquerda  = salvaMatrizShow(&((*raiz)->esquerda), show, 1, deslocamento, nivel + 1);
+  int direita = salvaMatrizShow(&((*raiz)->direita), show, 0, deslocamento + esquerda + largura, nivel + 1);
 
-    sprintf(b, " %3d ", (*root)->numero);
+  for (int i = 0; i < largura; i++){
+    show[2 * nivel][deslocamento + esquerda + i] = valores[i];
+  }
 
-    int left  = saveTree(&((*root)->esquerda),  1, offset, depth + 1, s);
-    int right = saveTree(&((*root)->direita), 0, offset + left + width, depth + 1, s);
-
-    for (int i = 0; i < width; i++)
-        s[2 * depth][offset + left + i] = b[i];
-
-    if (depth && is_left) {
-
-        for (int i = 0; i < width + right; i++)
-            s[2 * depth - 1][offset + left + width/2 + i] = '*';
-
-        s[2 * depth - 1][offset + left + width/2] = '/';
-        s[2 * depth - 1][offset + left + width + right + width/2] = ':';
-
-    } else if (depth && !is_left) {
-        for (int i = 0; i < left + width; i++)
-            s[2 * depth - 1][offset - width/2 + i] = '*';
-
-        s[2 * depth - 1][offset + left + width/2] = 92;
-        s[2 * depth - 1][offset - width/2 - 1] = ':';
+  if (nivel && direcao_esquerda) {
+    for (int i = 0; i < largura + direita; i++){
+      show[2 * nivel - 1][deslocamento + esquerda + largura/2 + i] = '-';
     }
-    return left + width + right;
+    show[2 * nivel - 1][deslocamento + esquerda + largura/2] = '/';
+    show[2 * nivel - 1][deslocamento + esquerda + largura + direita + largura/2] = ':';
+  }else if (nivel && !direcao_esquerda) {
+    for (int i = 0; i < esquerda + largura; i++){
+      show[2 * nivel - 1][deslocamento - largura/2 + i] = '-';
+    }
+    show[2 * nivel - 1][deslocamento + esquerda + largura/2] = 92;
+    show[2 * nivel - 1][deslocamento - largura/2 - 1] = ':';
+  }
+  return esquerda + largura + direita;
 }
