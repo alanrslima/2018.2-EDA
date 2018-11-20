@@ -23,7 +23,6 @@ int searchValue(No **raiz, int valor);
 // Funções auxiliares
 No *removeAtual(No *atual);
 void printTree(No **raiz, char *prefix);
-int totalNos(No **raiz);
 int insereNo(No **raiz, int valor);
 int arvoreNula(No **raiz);
 void liberaArvore(No **raiz);
@@ -249,16 +248,6 @@ No *removeAtual(No *atual){
   return no2;
 }
 
-int totalNos(No **raiz){
-  if (raiz == NULL)
-    return 0;
-  if (*raiz == NULL)
-    return 0;
-  int altura_esquerda = totalNos(&((*raiz)->esquerda));
-  int altura_direita = totalNos(&((*raiz)->direita));
-  return (altura_esquerda + altura_direita + 1);
-}
-
 int searchValue(No **raiz, int valor){
   if (arvoreNula(raiz))
     return 0;
@@ -284,7 +273,6 @@ int searchValue(No **raiz, int valor){
         if (!pai->direita || !pai->esquerda)
           printf("Este nó não tem irmão!\n" );
       }
-
       return 1;
     }
     pai = atual;
