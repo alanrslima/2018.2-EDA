@@ -1,3 +1,13 @@
+/*
+  Alunos participantes:                 Matrícula
+  Alan Ronison de Lima e Silva          16/0109256
+  André Goretti Motta                   16/0112028
+  Marco Antônio de Lima Costa           16/0135681
+
+  Obs: Utilize -lm no terminal para compilar o programa para reconhecer a biblioteca math.h
+  ex: gcc <arquivo.c> -o <nomeDoBinario> -lm
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -5,7 +15,7 @@
 #include <math.h>
 
 
-/* Seta valores randomicos dentro de um vetor com tamanho e maior número possivel estabelicidos pela parametro limite*/
+/* Seta valores randomicos dentro de um vetor com tamanho e maior número possivel estabelicidos pelo parametro limite*/
 void doRandom(int *, int limite);
 
 /* Retorna um ponteiro para uma imagem de asfalto com base em um numero de 1 a 50 ṕara identificação*/
@@ -22,9 +32,6 @@ void setMatrizFile(FILE *fp, int **matrizFile, int lin, int col);
 
 /* Cria o vetor ILBP */
 void ILBP(int **matrizFile, int lin, int col, int *ilbp);
-
-/* Cria o vetor GLCM */
-// void GLCM(int **matriz,int linha,int coluna,double **caracteristicas,int cont);
 
 /* Cria o vetor GLCM */
 void GLCM(int **matrizFile, int lin, int col, float *metricas);
@@ -48,7 +55,7 @@ void setVetorBinario(int **matrizFile, int lin, int col, char *vetorbin);
 int calculaMenorDecimal(char *bin);
 
 /* Calcula a distancia euclidiana */
-void euclidianDistance(int *vetorNormalizado, int *vetorA, int *vetorB, int limite);
+float euclidianDistance(float *medias, float **resultados, int indice);
 
 /* Faz a normalizacao do vetor */
 void dataNormalize(float *vet, float *vetNormalizado, int limite);
@@ -60,17 +67,21 @@ void concatenaIlbpGlcm(float *ilbpGlcm, int *ilbp, float *glcm);
 void calculaMediaTreinamento(float **matTreinamento, float *vetMedia);
 
 /* Preenche a matriz de resultado a partir de vetores normalizados */
-void setResultado(float **matResultado, float *vetNormalizado, int *contador);
+void setResultado(float **matResultado, float *vetNormalizado, int contador);
 
+/* Funcao para printar na tela os resultados das taxas analisadas */
+void printaResultado(float aceitacao, float falsaRejeicao, float falsaAceitacao);
 
+/* Responsavel por calculas as taxas de aceitacao, falsa aceitacao e falsa rejeicao levando em consideracao a distancia euclidiana */
+void calculaTaxas(float *mediaGrama, float *mediaAsfalto, float **resultadoGrama, float **resultadoAsfalto);
 
 
 int main(){
   int grass[50], asphalt[50];
-  int lin, col, aux;
+  int lin, col;
 	int **matrizFile, *ilbp;
   float *glcm, *ilbpGlcm, *ilbpGlcmNormalizado, *mediaGrama, *mediaAsfalto;
-  float **resultadoGrama, **resultadoAsfalto, **treinamentoResultadoGrama, **treinamentoResultoAsfalto;
+  float **resultadoGrama, **resultadoAsfalto;
 
   // Tratamento de imagens de asfalto
   resultadoAsfalto = (float **)malloc(50*sizeof(float *));
@@ -78,14 +89,13 @@ int main(){
     *(resultadoAsfalto+i) = (float *)malloc(536*sizeof(float));
   }
   doRandom(asphalt, 50);
-  // Contador para as posicoes do vetor de resultados do asphalt
-  aux = 0;
   // Percorre arquivos asphalt
   for(int i=0; i<50; i++){
-    printf("Arquivo número %d\n", i);
+    printf("Arquivo número %d (Asphalt)\n", i);
     FILE *fileAsphalt;
 		fileAsphalt = getAsphaltImage(fileAsphalt, asphalt[i]);
 		getQtdLinhasColunas(fileAsphalt, &lin, &col);
+    // Alocacao dinamica da matriz que ira receber os dados da imagem
     matrizFile = (int**)malloc(lin*sizeof(int *));
     for (int j = 0; j < lin; j++) {
       *(matrizFile+j) = (int*)malloc(col*sizeof(int));
@@ -102,7 +112,7 @@ int main(){
     GLCM(matrizFile, lin, col, glcm);
     concatenaIlbpGlcm(ilbpGlcm, ilbp, glcm);
     dataNormalize(ilbpGlcm, ilbpGlcmNormalizado, 536);
-    setResultado(resultadoAsfalto, ilbpGlcmNormalizado, &aux);
+    setResultado(resultadoAsfalto, ilbpGlcmNormalizado, i);
 
     // Liberação de memória
     free(ilbp);
@@ -122,14 +132,13 @@ int main(){
     *(resultadoGrama+i) = (float *)malloc(536*sizeof(float));
   }
   doRandom(grass, 50);
-  // Contador para as posicoes do vetor de resultados do asphalt
-  aux = 0;
-  // Percorre arquivos asphalt
+  // Percorre arquivos grass
   for(int i=0; i<50; i++){
-    printf("Arquivo número %d\n", i);
+    printf("Arquivo número %d (Grass)\n", i);
     FILE *fileGrass;
 		fileGrass = getGrassImage(fileGrass, grass[i]);
 		getQtdLinhasColunas(fileGrass, &lin, &col);
+    // Alocacao dinamica da matriz que ira receber os dados da imagem
     matrizFile = (int**)malloc(lin*sizeof(int *));
     for (int j = 0; j < lin; j++) {
       *(matrizFile+j) = (int*)malloc(col*sizeof(int));
@@ -146,7 +155,7 @@ int main(){
     GLCM(matrizFile, lin, col, glcm);
     concatenaIlbpGlcm(ilbpGlcm, ilbp, glcm);
     dataNormalize(ilbpGlcm, ilbpGlcmNormalizado, 536);
-    setResultado(resultadoGrama, ilbpGlcmNormalizado, &aux);
+    setResultado(resultadoGrama, ilbpGlcmNormalizado, i);
 
     // Liberação de memória
     free(ilbp);
@@ -162,30 +171,83 @@ int main(){
 
   mediaGrama = (float *) calloc(536, sizeof (float));
   mediaAsfalto = (float *) calloc(536, sizeof (float));
+  // Calcula a média de treinamento para as 25 primeiras fotos de grama
   calculaMediaTreinamento(resultadoGrama, mediaGrama);
+  // Calcula a média de treinamento para as 25 primeiras fotos de asfalto
   calculaMediaTreinamento(resultadoAsfalto, mediaAsfalto);
+  // Calcula as taxas das 25 imagens de teste de grama e asfalto e printa os resultados no final
+  calculaTaxas(mediaGrama, mediaAsfalto, resultadoGrama+25, resultadoAsfalto+25);
 
+  // Liberacao de memória
+  for (int i=0; i<50; i++){
+    free(*(resultadoGrama+i));
+  }
+  for (int i=0; i<50; i++){
+    free(*(resultadoAsfalto+i));
+  }
+  free(resultadoAsfalto);
+  free(resultadoGrama);
   free(mediaGrama);
   free(mediaAsfalto);
 
   return 0;
 }
 
+void calculaTaxas(float *mediaGrama, float *mediaAsfalto, float **resultadoGrama, float **resultadoAsfalto){
+  float falsaAceitacao = 0, falsaRejeicao = 0, aceitacao = 0;
+  float distanciaGrama, distanciaAsfalto;
+
+  for (int i = 0; i < 25; i++) {
+    // Faz o calculo de taxas para grama
+    distanciaGrama = euclidianDistance(mediaGrama, resultadoGrama, i);
+    distanciaAsfalto = euclidianDistance(mediaAsfalto, resultadoGrama, i);
+
+    if (distanciaGrama > distanciaAsfalto) {
+     falsaRejeicao++;
+    }
+    else if (distanciaGrama <= distanciaAsfalto) {
+     aceitacao++;
+   }
+   // Faz o calculo de taxas para asfalto
+   distanciaGrama = euclidianDistance(mediaGrama, resultadoAsfalto, i);
+   distanciaAsfalto = euclidianDistance(mediaAsfalto, resultadoAsfalto, i);
+
+   if(distanciaGrama < distanciaAsfalto) {
+     falsaAceitacao++;
+   }
+   else if(distanciaGrama >= distanciaAsfalto) {
+     aceitacao++;
+   }
+  }
+  printaResultado(aceitacao, falsaRejeicao, falsaAceitacao);
+}
+
+
+void printaResultado(float aceitacao, float falsaRejeicao, float falsaAceitacao){
+  aceitacao = (aceitacao / 50) * 100;
+  falsaAceitacao = (falsaAceitacao / 50) * 100;
+  falsaRejeicao = (falsaRejeicao / 50) * 100;
+
+  printf("\n------------------------------\nTaxa de Acerto: %.2f%%\n", aceitacao);
+  printf("Taxa de Falsa Aceitação: %.2f%%\n", falsaAceitacao);
+  printf("Taxa de Falsa Rejeição: %.2f%%\n\n\n", falsaRejeicao);
+}
+
+
 void calculaMediaTreinamento(float **matTreinamento, float *vetMedia){
   for (int i = 0; i < 536; i++) {
     for (int j = 0; j < 25; j++) {
-      vetMedia[i] += matTreinamento[j][i];
+      *(vetMedia+i) += *(*(matTreinamento+j)+i);
     }
-    vetMedia[i] = vetMedia[i] / 25.0;
+    *(vetMedia+i) = *(vetMedia+i) / 25;
   }
 }
 
 
-void setResultado(float **matResultado, float *vetNormalizado, int *contador){
+void setResultado(float **matResultado, float *vetNormalizado, int contador){
   for(int i=0; i < 536; i++){
-    *(*(matResultado+(*contador))+i) = *(vetNormalizado+i);
+    *(*(matResultado+contador)+i) = *(vetNormalizado+i);
   }
-  contador++;
 }
 
 
@@ -251,24 +313,24 @@ int calculaMenorDecimal(char *bin) {
 
 void setVetorBinario(int **matrizFile, int lin, int col, char *vetorbin) {
   float soma = 0, media;
-  int i, j, x = 0, y = 0;
+  int x = 0, y = 0;
   char **bin;
 
   bin = (char**)malloc(3*sizeof(char *));
-  for (i = 0; i < 3; i++) {
+  for (int i = 0; i < 3; i++) {
     *(bin + i) = (char*)malloc(3*sizeof(char));
   }
 
-  for (i = lin - 1; i <= lin + 1; i++) {
-    for (j = col - 1; j <= col + 1; j++) {
+  for (int i = lin - 1; i <= lin + 1; i++) {
+    for (int j = col - 1; j <= col + 1; j++) {
       soma += *(*(matrizFile+i)+j);
     }
   }
 
   media = soma / 9.0;
 
-  for (i = lin - 1; i <= lin + 1; i++) {
-    for (j = col - 1; j <= col + 1; j++) {
+  for (int i = lin - 1; i <= lin + 1; i++) {
+    for (int j = col - 1; j <= col + 1; j++) {
       if (*(*(matrizFile+i)+j) < media) {
         *(*(bin+x)+y) = '0';
       } else if (*(*(matrizFile+i)+j) >= media) {
@@ -289,7 +351,7 @@ void setVetorBinario(int **matrizFile, int lin, int col, char *vetorbin) {
   vetorbin[7] = *(*(bin+1)+0);
   vetorbin[8] = *(*(bin+1)+1);
 
-  for (i = 0; i < 3; i++) {
+  for (int i = 0; i < 3; i++) {
     free(*(bin+i));
   }
   free(bin);
@@ -327,9 +389,9 @@ void getQtdLinhasColunas(FILE *fp, int *linhas, int *colunas){
 FILE *getAsphaltImage(FILE *fp ,int id){
   char asphalt[25];
   if(id < 10)
-    sprintf(asphalt, "asphalt/asphalt_0%d.txt",id);
+    sprintf(asphalt, "DataSet/asphalt/asphalt_0%d.txt",id);
   else
-    sprintf(asphalt, "asphalt/asphalt_%d.txt",id);
+    sprintf(asphalt, "DataSet/asphalt/asphalt_%d.txt",id);
 
   printf("Arquivo: %s\n", asphalt);
   fp = fopen(asphalt ,"r");
@@ -345,9 +407,9 @@ FILE *getAsphaltImage(FILE *fp ,int id){
 FILE *getGrassImage(FILE *fp ,int id){
   char grass[25];
   if(id < 10)
-    sprintf(grass, "grass/grass_0%d.txt",id);
+    sprintf(grass, "DataSet/grass/grass_0%d.txt",id);
   else
-    sprintf(grass, "grass/grass_%d.txt",id);
+    sprintf(grass, "DataSet/grass/grass_%d.txt",id);
 
   printf("Arquivo: %s\n", grass);
   fp = fopen(grass ,"r");
@@ -373,7 +435,7 @@ void doRandom(int *vet, int limite){
       vet[random] = aux;
     }
   }
-  printf("Ordem do vetor de asfalto: \n");
+  printf("Ordem do vetor atual: \n");
   for(int i=0; i<limite; i++){
     printf("%d ", vet[i]);
   }
@@ -392,97 +454,20 @@ void dataNormalize(float *vet, float *vetNormalizado, int limite){
     if(vet[i] > maior)
       maior = vet[i];
   }
-
   //criando vetor normalizado
   for (int i = 0; i < limite; i++)
     vetNormalizado[i] = (vet[i] - menor) / (maior - menor);
 }
 
 
-void euclidianDistance(int *vetorNormalizado, int *vetorA, int *vetorB, int limite){
-  float distanciaA, distanciaB;
-  int somaA = 0, somaB = 0;
+float euclidianDistance(float *medias, float **resultados, int indice){
+  float distancia, soma = 0;
 
-  for (int i = 0; i < limite; i++) {
-    somaA += (pow((vetorNormalizado[i] + vetorA[i]),2));
-    somaB += (pow((vetorNormalizado[i] + vetorB[i]),2));
+  for (int i = 0; i < 536; i++) {
+    soma += pow(*(medias+i) - *(*(resultados+indice)+i), 2);
   }
-
-  distanciaA = (pow(somaA, 0.5));
-  distanciaB = (pow(somaB, 0.5));
+  return distancia = (pow(soma, 0.5));
 }
-
-
-// void GLCM(int **matriz,int linha,int coluna,double **caracteristicas,int cont){
-//   int ***matrizesGlcm;
-//   int i,j,t;
-//   int TAMCOD = 256;
-//
-//   if(matrizesGlcm = (int***)calloc(8,sizeof(int**)),matrizesGlcm == NULL){
-//     printf("alocação falhou!\n");
-//   }
-// 	for (i = 0; i < 8; i++) {
-// 	    if(matrizesGlcm[i] = (int**)calloc(TAMCOD,sizeof(int*)),matrizesGlcm[i] == NULL){
-// 	      printf("alocação falhou!\n");
-// 	    }
-// 		for (j = 0; j < TAMCOD; j++) {
-//       		if(matrizesGlcm[i][j] = (int*)calloc(TAMCOD,sizeof(int)),matrizesGlcm[i][j] == NULL){
-//         	printf("alocação falhou!\n");
-//       		}
-// 		}
-// 	}
-//
-//
-//   for (t = 0; t < 8; t++) {
-//     for (i = 1; i < linha-1; i++) {
-//       for (j = 1; j < coluna-1; j++) {
-//         switch (t) {
-//           case 0:
-//             matrizesGlcm[t][matriz[i][j]][matriz[i-1][j-1]]++;
-//             break;
-//           case 1:
-//             matrizesGlcm[t][matriz[i][j]][matriz[i-1][j]]++;
-//             break;
-//           case 2:
-//             matrizesGlcm[t][matriz[i][j]][matriz[i-1][j+1]]++;
-//             break;
-//           case 3:
-//             matrizesGlcm[t][matriz[i][j]][matriz[i][j-1]]++;
-//             break;
-//           case 4:
-//             matrizesGlcm[t][matriz[i][j]][matriz[i][j+1]]++;
-//             break;
-//           case 5:
-//             matrizesGlcm[t][matriz[i][j]][matriz[i+1][j-1]]++;
-//             break;
-//           case 6:
-//             matrizesGlcm[t][matriz[i][j]][matriz[i+1][j]]++;
-//             break;
-//           case 7:
-//             matrizesGlcm[t][matriz[i][j]][matriz[i+1][j+1]]++;
-//         }
-//       }
-//     }
-//     if (cont%2) {
-//       caracteristicas[(cont-1)/2][512+3*t] = calculaEnergia(matrizesGlcm[t]);
-//       caracteristicas[(cont-1)/2][512+3*t+1] = calculaHomogeneidade(matrizesGlcm[t]);
-//       caracteristicas[(cont-1)/2][512+3*t+2] = calculaContraste(matrizesGlcm[t]);
-//     } else {
-//       caracteristicas[IMAGENS/2+cont/2][512+3*t] = calculaEnergia(matrizesGlcm[t]);
-//       caracteristicas[IMAGENS/2+cont/2][512+3*t+1] = calculaHomogeneidade(matrizesGlcm[t]);
-//       caracteristicas[IMAGENS/2+cont/2][512+3*t+2] = calculaContraste(matrizesGlcm[t]);
-//     }
-//   }
-//
-//   for (i = 0; i < 8; i++) {
-//     for (j = 0; j < TAMCOD; j++) {
-//       free(matrizesGlcm[i][j]);
-//     }
-//     free(matrizesGlcm[i]);
-//   }
-//   free(matrizesGlcm);
-//
-// }
 
 
 void calculaMetricas(int **glcm, float *metricas, int initialPosition, int linhaColuna){
@@ -496,75 +481,73 @@ void GLCM(int **matrizFile, int lin, int col, float *metricas) {
 	int **glcm, GLCM_LINHA_COLUNA = 512;
 	for (int k = 0; k < 8; k++) {
 	// Aloca uma matriz 512x512 para o glcm
-  	glcm = (int**)calloc(GLCM_LINHA_COLUNA, sizeof(int *));
-  	 for (int i = 0; i < GLCM_LINHA_COLUNA; i++) {
-  	   *(glcm+i) = (int*)calloc(GLCM_LINHA_COLUNA, sizeof(int));
-  	 }
-   if (k == 0) {
-	 // Incrementa a posição [elemento][elemento vizinho da direita] da matriz glcm.
-     for (int i = 0; i < lin; i++) {
-       for (int j = 0; j < col - 1; j++) {
-         glcm[matrizFile[i][j]][matrizFile[i][j+1]]++;
-		   }
-	   }
-	   calculaMetricas(glcm, metricas, 0, GLCM_LINHA_COLUNA);
+    glcm = (int**)calloc(GLCM_LINHA_COLUNA, sizeof(int *));
+  	  for (int i = 0; i < GLCM_LINHA_COLUNA; i++) {
+  	    *(glcm+i) = (int*)calloc(GLCM_LINHA_COLUNA, sizeof(int));
+  	  }
+    if (k == 0) {
+	   // Incrementa na posicao [indice][indice vizinho a direita] da matriz GLCM e calcula metricas.
+      for (int i = 0; i < lin; i++) {
+        for (int j = 0; j < col - 1; j++) {
+          glcm[matrizFile[i][j]][matrizFile[i][j+1]]++;
+		    }
+	    }
+	    calculaMetricas(glcm, metricas, 0, GLCM_LINHA_COLUNA);
     } else if (k == 1) {
-	      // Incrementa a posição [elemento][elemento vizinho da esquerda] da matriz glcm.
-        for (int i = 0; i < lin; i++) {
+	     // Incrementa na posicao [indice][indice vizinho a esquerda] da matriz GLCM e calcula metricas.
+       for (int i = 0; i < lin; i++) {
 	        for (int j = 1; j < col; j++) {
-	        	glcm[matrizFile[i][j]][matrizFile[i][j-1]]++;
-	    		}
-	    	}
+	           glcm[matrizFile[i][j]][matrizFile[i][j-1]]++;
+	    	  }
+	      }
 	      calculaMetricas(glcm, metricas, 3, GLCM_LINHA_COLUNA);
 	    } else if (k == 2) {
-	     // Incrementa a posição [elemento][elemento vizinho de cima] da matriz glcm.
+	     // Incrementa a posição [indice][indice vizinho de cima] da matriz GLCM e calcula metricas.
         for (int i = 1; i < lin; i++) {
           for (int j = 0; j < col; j++) {
-		         glcm[matrizFile[i][j]][matrizFile[i-1][j]]++;
-		        }
+		        glcm[matrizFile[i][j]][matrizFile[i-1][j]]++;
+		      }
 		    }
-	      	calculaMetricas(glcm, metricas, 6, GLCM_LINHA_COLUNA);
+	      calculaMetricas(glcm, metricas, 6, GLCM_LINHA_COLUNA);
 	    } else if (k == 3) {
-	      // Incrementa a posição [elemento][elemento vizinho de baixo] da matriz glcm.
+	      // Incrementa a posição [indice][indice vizinho de baixo] da matriz GLCM e calcula metricas.
 	    	for (int i = 0; i < lin - 1; i++) {
-	        	for (int j = 0; j < col; j++) {
-	          		glcm[matrizFile[i][j]][matrizFile[i+1][j]]++;
-	        	}
+	        for (int j = 0; j < col; j++) {
+	          glcm[matrizFile[i][j]][matrizFile[i+1][j]]++;
+	        }
 	    	}
-	      	calculaMetricas(glcm, metricas, 9, GLCM_LINHA_COLUNA);
+	      calculaMetricas(glcm, metricas, 9, GLCM_LINHA_COLUNA);
 	    } else if (k == 4) {
-
-	      // Incrementa a posição [elemento][elemento vizinho da diagonal de cima da esquerda] da matriz glcm.
+	      // Incrementa a posição [indice][indice vizinho da diagonal de cima da esquerda] da matriz GLCM e calcula metricas.
 	    	for (int i = 1; i < lin; i++) {
 	    		for (int j = 1; j < col; j++) {
-	          		glcm[matrizFile[i][j]][matrizFile[i-1][j-1]]++;
-	       		}
-	      	}
-	      	calculaMetricas(glcm, metricas, 12, GLCM_LINHA_COLUNA);
+	          glcm[matrizFile[i][j]][matrizFile[i-1][j-1]]++;
+	       	}
+	      }
+	      calculaMetricas(glcm, metricas, 12, GLCM_LINHA_COLUNA);
 	    } else if (k == 5) {
-
-	      // Incrementa a posição [elemento][elemento vizinho da diagonal de cima da direita] da matriz glcm.
-	      	for (int i = 1; i < lin; i++) {
-	        	for (int j = 0; j < col - 1; j++) {
-	          		glcm[matrizFile[i][j]][matrizFile[i-1][j+1]]++;
-	        	}
-	      	}
-	      	calculaMetricas(glcm, metricas, 15, GLCM_LINHA_COLUNA);
+	      // Incrementa a posição [indice][indice vizinho da diagonal de cima da direita] da matriz GLCM e calcula metricas.
+	      for (int i = 1; i < lin; i++) {
+	        for (int j = 0; j < col - 1; j++) {
+	          glcm[matrizFile[i][j]][matrizFile[i-1][j+1]]++;
+	        }
+	      }
+	      calculaMetricas(glcm, metricas, 15, GLCM_LINHA_COLUNA);
 	    } else if (k == 6) {
-	      // Incrementa a posição [elemento][elemento vizinho da diagonal de baixo da esquerda] da matriz glcm.
-	      	for (int i = 0; i < lin - 1; i++) {
-	        	for (int j = 1; j < col; j++) {
-	         		glcm[matrizFile[i][j]][matrizFile[i+1][j-1]]++;
-	        	}
-	      	}
-	      	calculaMetricas(glcm, metricas, 18, GLCM_LINHA_COLUNA);
-	    } else if (k == 7) {
-	      // Incrementa a posição [elemento][elemento vizinho da diagonal de baixo da direita] da matriz glcm.
+	      // Incrementa a posição [indice][indice vizinho da diagonal de baixo da esquerda] da matriz GLCM e calcula metricas.
 	      for (int i = 0; i < lin - 1; i++) {
-	        	for (int j = 0; j < col - 1; j++) {
-	          		glcm[matrizFile[i][j]][matrizFile[i+1][j+1]]++;
-	        	}
-	      	}
+	        for (int j = 1; j < col; j++) {
+	         	glcm[matrizFile[i][j]][matrizFile[i+1][j-1]]++;
+	        }
+	      }
+	      calculaMetricas(glcm, metricas, 18, GLCM_LINHA_COLUNA);
+	    } else if (k == 7) {
+	      // Incrementa a posição [indice][indice vizinho da diagonal de baixo da direita] da matriz GLCM e calcula metricas.
+	      for (int i = 0; i < lin - 1; i++) {
+	        for (int j = 0; j < col - 1; j++) {
+	          glcm[matrizFile[i][j]][matrizFile[i+1][j+1]]++;
+	        }
+	      }
 	     	calculaMetricas(glcm, metricas, 21, GLCM_LINHA_COLUNA);
 	    }
 	    // Libera a memória utilizada pela matriz GLCM.
