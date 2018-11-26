@@ -8,7 +8,7 @@ typedef struct neuronio{
     // double w[536]; //Núcleo
     // double b;
     double s; //Saida
-    struct neuronio *proxima;
+    struct neuronio **proxima;
 }Neuronio;
 
 int get_parametro_linha_comando(int argc, char *argv[], int *param);
@@ -17,8 +17,9 @@ void get_qtd_linhas_colunas(FILE *fp, int *linhas, int *colunas);
 void set_matriz_feature(FILE *arq, double **matriz_feature, int lin, int col);
 Neuronio *do_neuronio(double *p, double b);
 double calculo_saida_neuronio(double *p, double *w, double b);
-void do_random(double *vetor, int semente);
-
+void do_vetor_random(double *vetor, int semente);
+double do_random(int semente);
+void set_proxima_camada(Neuronio **camada,int tam_camada, Neuronio **proxima_camada);
 
 int main(int argc, char *argv[]) {
   int qtd_neuronios_ocultos;
@@ -28,51 +29,100 @@ int main(int argc, char *argv[]) {
     printf("Exemplo: $ ./nomedoexecutavel 10\n");
     exit(1);
   }
+  double **feature_asfalto, **feature_grama;
 
-  double **feature_grama, **feature_asfalto;
+  // feature_grama = (double **)malloc(50*sizeof(double *));
+  // for (int i=0; i<50; i++){
+  //   *(feature_grama+i) = (double *)malloc(536*sizeof(double));
+  // }
 
   feature_asfalto = (double **)malloc(50*sizeof(double *));
   for (int i=0; i<50; i++){
     *(feature_asfalto+i) = (double *)malloc(536*sizeof(double));
   }
-  feature_grama = (double **)malloc(50*sizeof(double *));
-  for (int i=0; i<50; i++){
-    *(feature_grama+i) = (double *)malloc(536*sizeof(double));
-  }
 
   if (load_features(feature_asfalto, "asfalto.txt")){
-    Neuronio **camada_entrada = (Neuronio **)malloc(536*sizeof(Neuronio *));
-    double b[536];
-    
+    Neuronio **camada_entrada, **camada_oculta, **camada_saida;
+
+    // Aloca dinamicamente uma matriz de neuronios, que será a camada de entrada
+    camada_entrada = (Neuronio **)malloc(536*sizeof(Neuronio *));
     for (int i=0; i<536; i++){
       *(camada_entrada+i) = (Neuronio *)malloc(sizeof(Neuronio));
     }
-
-    do_random(b,5);
-    for (int i=0; i<536; i++){
-      *(camada_entrada+i) = do_neuronio(feature_asfalto[0], b[i]);
+    // Aloca dinamicamente uma matriz de neuronios, que será a camada oculta
+    camada_oculta = (Neuronio **)malloc(qtd_neuronios_ocultos*sizeof(Neuronio *));
+    for (int i=0; i<qtd_neuronios_ocultos; i++){
+      *(camada_oculta+i) = (Neuronio *)malloc(sizeof(Neuronio));
+    }
+    // Aloca dinamicamente uma matriz de neuronios, que será a camada de saida
+    camada_saida = (Neuronio **)malloc(sizeof(Neuronio *));
+    for (int i=0; i<1; i++){
+      *(camada_saida+i) = (Neuronio *)malloc(sizeof(Neuronio));
     }
 
+    double *b = (double *)malloc(536*sizeof(double));
+    do_vetor_random(b, 1);
+    // Cria todos os neuronios da camada de entrada
+    for (int i=0; i<536; i++){
+      *(camada_entrada+i) = do_neuronio(feature_asfalto[0], *(b+i));
+    }
+
+    // Seta valores do vetor de entrada da camada oculta com base nas saidas
+    // dos neuronios da camada de entrada
+    double *p_camada_oculta = (double *)malloc(536*sizeof(double));
+    for (int i=0; i<536; i++){
+      *(p_camada_oculta+i) = (*(camada_entrada+i))->s;
+    }
+    do_vetor_random(b, 4);
+    // Cria todos os neuronios da camada oculta
+    for (int i=0; i<qtd_neuronios_ocultos; i++){
+      *(camada_oculta+i) = do_neuronio(p_camada_oculta, *(b+i));
+    }
+
+    // Aponta cada neuronio da camada de entrada para a camada oculta
+    set_proxima_camada(camada_entrada, 536, camada_oculta);
+    // Aponta cada neuronio da camada oculta para a camada de saida
+    set_proxima_camada(camada_oculta, qtd_neuronios_ocultos, camada_saida);
+
+
+
+    //Liberacao de memória
+    free(b);
+    free(p_camada_oculta);
     for (int i=0; i<536; i++){
       free(*(camada_entrada+i));
     }
     free(camada_entrada);
+    for (int i=0; i<qtd_neuronios_ocultos; i++){
+      free(*(camada_oculta+i));
+    }
+    free(camada_oculta);
+    for (int i=0; i<1; i++){
+      free(*(camada_saida+i));
+    }
+    free(camada_saida);
   }
 
   //Liberacao de memória
-  for (int i=0; i<50; i++){
-    free(*(feature_grama+i));
-  }
+  // for (int i=0; i<50; i++){
+  //   free(*(feature_grama+i));
+  // }
   for (int i=0; i<50; i++){
     free(*(feature_asfalto+i));
   }
   free(feature_asfalto);
-  free(feature_grama);
+  // free(feature_grama);
 
   return 0;
 }
 
-void do_random(double *vetor, int semente){
+void set_proxima_camada(Neuronio **camada,int tam_camada, Neuronio **proxima_camada){
+  for (int i=0; i<tam_camada; i++){
+    (*(camada+i))->proxima = proxima_camada;
+  }
+}
+
+void do_vetor_random(double *vetor, int semente){
   srand(time(NULL)+semente);
   for (int i=0; i<536; i++){
     *(vetor+i) = (rand() % 31999) - 16000;
@@ -86,15 +136,13 @@ Neuronio *do_neuronio(double *p, double b){
       printf("Erro na alocação!\n");
       exit(1);
   }
-  double w[536];
-  do_random(w, 2);
+  double w[536], s;
+  do_vetor_random(w, 2);
 
-  printf("%lf \n", calculo_saida_neuronio(p, w, b));
-
-  novo_neuronio->s = 2;
+  s = calculo_saida_neuronio(p, w, b);
+  novo_neuronio->s = s;
   novo_neuronio->proxima = NULL;
   return novo_neuronio;
-
 }
 
 double calculo_saida_neuronio(double *p, double *w, double b){
@@ -106,7 +154,6 @@ double calculo_saida_neuronio(double *p, double *w, double b){
   }
   n = somatorio + b;
   s = 1 / (1 + exp(-n));
-
   return s;
 }
 
@@ -149,7 +196,6 @@ void get_qtd_linhas_colunas(FILE *fp, int *linhas, int *colunas){
 			*colunas = *colunas + 1;
 		}
 	}
-	printf("Quantidade de linhas: %d, Quantidade de colunas: %d\n\n", *linhas, *colunas);
 }
 
 int get_parametro_linha_comando(int argc, char *argv[], int *param){
