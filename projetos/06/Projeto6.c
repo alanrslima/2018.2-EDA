@@ -1,59 +1,113 @@
 #include <stdio.h>
 #include <stdlib.h>
-//#include <stdbool.h>
 #include <time.h>
-//#include <math.h>
+#include <math.h>
 
-/* Pega o parametro passado via linha de comando */
+typedef struct neuronio{
+    // double p[536]; //Entrada
+    // double w[536]; //Núcleo
+    // double b;
+    double s; //Saida
+    struct neuronio *proxima;
+}Neuronio;
+
 int get_parametro_linha_comando(int argc, char *argv[], int *param);
-
 int load_features(double **feature, char *url);
-
 void get_qtd_linhas_colunas(FILE *fp, int *linhas, int *colunas);
-
 void set_matriz_feature(FILE *arq, double **matriz_feature, int lin, int col);
+Neuronio *do_neuronio(double *p, double b);
+double calculo_saida_neuronio(double *p, double *w, double b);
+void do_random(double *vetor, int semente);
+
 
 int main(int argc, char *argv[]) {
   int qtd_neuronios_ocultos;
-  if (get_parametro_linha_comando(argc, argv, &qtd_neuronios_ocultos)){
-    double **feature_grama, **feature_asfalto;
 
-    feature_asfalto = (double **)malloc(50*sizeof(double *));
-    for (int i=0; i<50; i++){
-      *(feature_asfalto+i) = (double *)malloc(536*sizeof(double));
-    }
-
-    feature_grama = (double **)malloc(50*sizeof(double *));
-    for (int i=0; i<50; i++){
-      *(feature_grama+i) = (double *)malloc(536*sizeof(double));
-    }
-
-    load_features(feature_asfalto, "asfalto.txt");
-    load_features(feature_asfalto, "grama.txt");
-
-    // for (int i = 0; i < 50; i++) {
-    //   for (int j = 0; j < 536; j++) {
-    //     printf("%lf, ",  feature_asfalto[i][j]);
-    //   }
-    //   printf("\n\n\n" );
-    // }
-
-    //Liberacao de memória
-    for (int i=0; i<50; i++){
-      free(*(feature_grama+i));
-    }
-    for (int i=0; i<50; i++){
-      free(*(feature_asfalto+i));
-    }
-    free(feature_asfalto);
-    free(feature_grama);
-
-  }else{
+  if (!get_parametro_linha_comando(argc, argv, &qtd_neuronios_ocultos)){
     printf("A quantidade de neurônios na camada oculta deve ser definida via linha de comando\n" );
     printf("Exemplo: $ ./nomedoexecutavel 10\n");
     exit(1);
   }
+
+  double **feature_grama, **feature_asfalto;
+
+  feature_asfalto = (double **)malloc(50*sizeof(double *));
+  for (int i=0; i<50; i++){
+    *(feature_asfalto+i) = (double *)malloc(536*sizeof(double));
+  }
+  feature_grama = (double **)malloc(50*sizeof(double *));
+  for (int i=0; i<50; i++){
+    *(feature_grama+i) = (double *)malloc(536*sizeof(double));
+  }
+
+  if (load_features(feature_asfalto, "asfalto.txt")){
+    Neuronio **camada_entrada = (Neuronio **)malloc(536*sizeof(Neuronio *));
+    double b[536];
+    
+    for (int i=0; i<536; i++){
+      *(camada_entrada+i) = (Neuronio *)malloc(sizeof(Neuronio));
+    }
+
+    do_random(b,5);
+    for (int i=0; i<536; i++){
+      *(camada_entrada+i) = do_neuronio(feature_asfalto[0], b[i]);
+    }
+
+    for (int i=0; i<536; i++){
+      free(*(camada_entrada+i));
+    }
+    free(camada_entrada);
+  }
+
+  //Liberacao de memória
+  for (int i=0; i<50; i++){
+    free(*(feature_grama+i));
+  }
+  for (int i=0; i<50; i++){
+    free(*(feature_asfalto+i));
+  }
+  free(feature_asfalto);
+  free(feature_grama);
+
   return 0;
+}
+
+void do_random(double *vetor, int semente){
+  srand(time(NULL)+semente);
+  for (int i=0; i<536; i++){
+    *(vetor+i) = (rand() % 31999) - 16000;
+  }
+}
+
+Neuronio *do_neuronio(double *p, double b){
+  Neuronio *novo_neuronio = (Neuronio *)malloc(sizeof(Neuronio));
+
+  if (novo_neuronio == NULL){
+      printf("Erro na alocação!\n");
+      exit(1);
+  }
+  double w[536];
+  do_random(w, 2);
+
+  printf("%lf \n", calculo_saida_neuronio(p, w, b));
+
+  novo_neuronio->s = 2;
+  novo_neuronio->proxima = NULL;
+  return novo_neuronio;
+
+}
+
+double calculo_saida_neuronio(double *p, double *w, double b){
+  double somatorio = 0;
+  double n, s;
+
+  for(int i=0; i<536; i++){
+    somatorio += (*(w+i)) * (*(p+i));
+  }
+  n = somatorio + b;
+  s = 1 / (1 + exp(-n));
+
+  return s;
 }
 
 int load_features(double **feature, char *url){
