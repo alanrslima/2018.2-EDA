@@ -78,6 +78,9 @@ void getFeaturesAsphalt(float **resultadoAsfalto);
 /* Retorna uma matriz 50x536 com vetores ilbpGlc normalizados de cada imagem de grama */
 void getFeaturesGrass(float **resultadoGrama);
 
+int geraAsfaltoTxt(float **resultadoGrama);
+int geraGramaTxt(float **resultadoGrama);
+
 int main(int argc, char *argv[]) {
   int param;
   if (getParametroLinhaComando(argc, argv, &param)){
@@ -96,6 +99,9 @@ int main(int argc, char *argv[]) {
 
     getFeaturesAsphalt(resultadoAsfalto);
     getFeaturesGrass(resultadoGrama);
+
+    geraAsfaltoTxt(resultadoAsfalto);
+    geraGramaTxt(resultadoGrama);
 
     //Liberacao de memória
     for (int i=0; i<50; i++){
@@ -146,7 +152,7 @@ void getFeaturesGrass(float **resultadoGrama){
     GLCM(matrizFile, lin, col, glcm);
     concatenaIlbpGlcm(ilbpGlcm, ilbp, glcm);
     dataNormalize(ilbpGlcm, ilbpGlcmNormalizado, 536);
-    setResultado(resultadoGrama, ilbpGlcm, i);
+    setResultado(resultadoGrama, ilbpGlcmNormalizado, i);
 
     // Liberação de memória
     free(ilbp);
@@ -191,7 +197,7 @@ void getFeaturesAsphalt(float **resultadoAsfalto){
     GLCM(matrizFile, lin, col, glcm);
     concatenaIlbpGlcm(ilbpGlcm, ilbp, glcm);
     dataNormalize(ilbpGlcm, ilbpGlcmNormalizado, 536);
-    setResultado(resultadoAsfalto, ilbpGlcm, i);
+    setResultado(resultadoAsfalto, ilbpGlcmNormalizado, i);
 
     // Liberação de memória
     free(ilbp);
@@ -562,4 +568,72 @@ double calculaEnergia(int **matriz, int linhaColuna){
     }
   }
   return total;
+}
+
+int geraAsfaltoTxt(float **resultadoAsfalto){
+  FILE *arquivo; // cria variável ponteiro para o arquivo
+
+  //abrindo o arquivo com tipo de abertura w
+  arquivo = fopen("asfalto.txt", "w");
+
+  //testando se o arquivo foi realmente criado
+  if(arquivo == NULL)
+  {
+    printf("Erro na abertura do arquivo!\n");
+    return 1;
+  }
+
+  //usando fprintf para armazenar a string no arquivo
+  for (int i = 0; i < 50; i++)
+  {
+    for(int j = 0; j < 536; j++)
+    {
+      if(j != 535)
+        fprintf(arquivo, "%lf ", resultadoAsfalto[i][j]);
+      else if(j == 535)
+        fprintf(arquivo, "%lf", resultadoAsfalto[i][j]);
+    }
+    fprintf(arquivo, "\n");
+  }
+
+  //usando fclose para fechar o arquivo
+  fclose(arquivo);
+
+  printf("Dados gravados com sucesso!\n");
+
+  return(0);
+}
+
+int geraGramaTxt(float **resultadoGrama){
+  FILE *arquivo; // cria variável ponteiro para o arquivo
+
+  //abrindo o arquivo com tipo de abertura w
+  arquivo = fopen("grama.txt", "w");
+
+  //testando se o arquivo foi realmente criado
+  if(arquivo == NULL)
+  {
+    printf("Erro na abertura do arquivo!\n");
+    return 1;
+  }
+
+  //usando fprintf para armazenar a string no arquivo
+  for (int i = 0; i < 50; i++)
+  {
+    for(int j = 0; j < 536; j++)
+    {
+      if(j != 535)
+        fprintf(arquivo, "%lf ", resultadoGrama[i][j]);
+      else if(j == 535)
+        fprintf(arquivo, "%lf", resultadoGrama[i][j]);
+    }
+    fprintf(arquivo, "\n");
+  }
+
+  //usando fclose para fechar o arquivo
+  fclose(arquivo);
+
+  printf("Dados gravados com sucesso!\n");
+
+  return(0);
 }
