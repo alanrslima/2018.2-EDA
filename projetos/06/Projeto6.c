@@ -79,16 +79,27 @@ int main(int argc, char *argv[]) {
       *(camada_oculta+i) = do_neuronio(p_camada_oculta, *(b+i));
     }
 
+    // Seta valores do vetor de entrada da camada de saida com base nas saidas
+    // dos neuronios da camada oculta
+    double *p_camada_saida = (double *)malloc(536*sizeof(double));
+    for (int i=0; i<qtd_neuronios_ocultos; i++){
+      *(p_camada_saida+i) = (*(camada_oculta+i))->s;
+    }
+    do_vetor_random(b, 3);
+    // Cria todos os neuronios da camada de saida
+    for (int i=0; i<1; i++){
+      *(camada_saida+i) = do_neuronio(p_camada_saida, *(b+i));
+    }
+
     // Aponta cada neuronio da camada de entrada para a camada oculta
     set_proxima_camada(camada_entrada, 536, camada_oculta);
     // Aponta cada neuronio da camada oculta para a camada de saida
     set_proxima_camada(camada_oculta, qtd_neuronios_ocultos, camada_saida);
 
-
-
     //Liberacao de memória
     free(b);
     free(p_camada_oculta);
+    free(p_camada_saida);
     for (int i=0; i<536; i++){
       free(*(camada_entrada+i));
     }
