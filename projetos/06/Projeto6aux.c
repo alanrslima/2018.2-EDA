@@ -15,12 +15,12 @@ typedef struct neuronio{
 }Neuronio;
 
 typedef struct camada{
-  Neuronio *neuronios;
+  Neuronio **neuronios;
   int qtd_neuronios;
 }Camada;
 
 typedef struct rede{
-  Camada *camadas;
+  Camada **camadas;
   int qtd_camadas;
 }Rede;
 

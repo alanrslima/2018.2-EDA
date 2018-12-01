@@ -28,7 +28,7 @@ void set_matriz_feature(FILE *arq, double **matriz_feature);
 void update_neuronio(Neuronio *neuronio, double *p);
 void do_rede_neural(Neuronio **c_entrada, Neuronio **c_oculta, Neuronio **c_saida, int qtd_neuronios_ocultos);
 Neuronio **do_camada(int tam_camada);
-double do_ciclo_treinamento(Neuronio **c_entrada, Neuronio **c_oculta, Neuronio **c_saida, double *p_entrada, int qtd_neuronios_ocultos);
+double do_ciclo_treinamento(Neuronio **c_entrada, Neuronio **c_oculta, Neuronio **c_saida, Imagem *imagem, int qtd_neuronios_ocultos);
 
 // Funcoes de aleatorizacao
 void do_features_random(Imagem **features_teste, Imagem **features_treinamento);
@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
   double media_quadratica = 0.5;
   do{
     for (int i=0; i<50; i++){
-      *(saidas+i) = do_ciclo_treinamento(camada_entrada, camada_oculta, camada_saida, (*(features_treinamento+i))->feature, qtd_neuronios_ocultos);
+      *(saidas+i) = do_ciclo_treinamento(camada_entrada, camada_oculta, camada_saida, *(features_treinamento+i), qtd_neuronios_ocultos);
     }
     count++;
   }while(count<2);
@@ -82,11 +82,32 @@ int main(int argc, char *argv[]) {
     free(*(features_teste+i));
   }
   free(features_teste);
+  features_teste = NULL;
+
   for (int i=0; i<50; i++){
     free((*(features_treinamento+i))->feature);
     free(*(features_treinamento+i));
   }
   free(features_treinamento);
+  features_treinamento = NULL;
+
+  for (int i=0; i<536; i++){
+    free(*(camada_entrada+i));
+  }
+  free(camada_entrada);
+  camada_entrada = NULL;
+
+  for (int i=0; i<qtd_neuronios_ocultos; i++){
+    free(*(camada_oculta+i));
+  }
+  free(camada_oculta);
+  camada_oculta = NULL;
+
+  for (int i=0; i<1; i++){
+    free(*(camada_saida+i));
+  }
+  free(camada_saida);
+  camada_saida = NULL;
 
   return 0;
 }
@@ -130,7 +151,9 @@ void do_rede_neural(Neuronio **c_entrada, Neuronio **c_oculta, Neuronio **c_said
   }
 }
 
-double do_ciclo_treinamento(Neuronio **c_entrada, Neuronio **c_oculta, Neuronio **c_saida, double *p_entrada, int qtd_neuronios_ocultos){
+double do_ciclo_treinamento(Neuronio **c_entrada, Neuronio **c_oculta, Neuronio **c_saida, Imagem *imagem, int qtd_neuronios_ocultos){
+  double *p_entrada = imagem->feature;
+
   // Calcula o s de todos os neuronios de entrada
   for (int i=0; i<536; i++){
     update_neuronio(*(c_entrada+i), p_entrada);
@@ -152,7 +175,9 @@ double do_ciclo_treinamento(Neuronio **c_entrada, Neuronio **c_oculta, Neuronio 
     update_neuronio(*(c_saida+i), p_saida);
   }
 
-  return (*(c_saida))->saida;
+  double erro = imagem->identificador - (*(c_saida))->saida;
+
+  return erro;
 }
 
 
