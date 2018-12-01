@@ -41,8 +41,9 @@ void do_matriz_random(double **matriz, int semente, int linhas, int colunas);
 // Funcoes BP
 double derivada_logistica(double s);
 void gradiente_saida(Neuronio *neuronio, double erro);
-void gradiente_neuronio(Neuronio *neuronio, Neuronio **camada, int i);
-void ajuste_w(Neuronio *neuronio, double *w, double *p);
+void gradiente_neuronio(Neuronio *neuronio, Neuronio **camada, int i, int tam);
+void ajuste_w(Neuronio *neuronio, int tam_camada, Neuronio **camada_anterior );
+void ajuste_w_entrada(Neuronio *neuronio, int tam_camada, double *features );
 void ajuste_b(Neuronio *neuronio);
 
 
@@ -80,6 +81,7 @@ int main(int argc, char *argv[]) {
       *(saidas+i) = do_ciclo_treinamento(camada_entrada, camada_oculta, camada_saida, *(features_treinamento+i), qtd_neuronios_ocultos);
     }
     media_quadratica = calcula_media_quadratica(saidas, 50);
+    printf("Media = %f\n", media_quadratica);
     count++;
   }while(count<10);
 
@@ -191,15 +193,43 @@ double do_ciclo_treinamento(Neuronio **c_entrada, Neuronio **c_oculta, Neuronio 
   }
 
   double erro = imagem->identificador - (*(c_saida))->saida;
-
   // Inicio do BP
-  gradiente_saida(*(c_saida), erro);
 
+  // Gradiente da camada de saida
+  gradiente_saida(*(c_saida), erro);
+  // Gradiente da camada oculta
   for(int i = 0; i < qtd_neuronios_ocultos; i++){
-    gradiente_neuronio(*(c_oculta+i), c_saida, i);
+    gradiente_neuronio(*(c_oculta+i), c_saida, i, 1);
+  }
+  // Gradiente da camada de entrada
+  for(int i = 0; i < 536; i++){
+    gradiente_neuronio(*(c_entrada+i), c_oculta, i, qtd_neuronios_ocultos);
+  }
+
+  for(int i=0; i<536; i++){
+    ajuste_w_entrada(*(c_entrada+i), 536, p_entrada);
+  }
+
+  for(int i=0; i<qtd_neuronios_ocultos; i++){
+    ajuste_w(*(c_oculta+i), qtd_neuronios_ocultos, c_entrada);
+  }
+
+  for(int i=0; i<1; i++){
+    ajuste_w(*(c_saida+i), 1, c_oculta);
   }
 
 
+  for(int i=0; i<536; i++){
+    ajuste_b(*(c_entrada+i));
+  }
+
+  for(int i=0; i<qtd_neuronios_ocultos; i++){
+    ajuste_b(*(c_oculta+i));
+  }
+
+  for(int i=0; i<1; i++){
+      ajuste_b(*(c_saida+i));
+  }
   return erro;
 }
 
@@ -377,32 +407,44 @@ void do_matriz_random(double **matriz, int semente, int linhas, int colunas){
 
 double derivada_logistica(double s){
   double derivada;
-
   derivada = -((exp(s)) / pow(exp(s) - 1, 2));
-
   return derivada;
 }
 
 void gradiente_saida(Neuronio *neuronio, double erro){
   double derivada = derivada_logistica(neuronio -> saida);
-  neuronio -> gradiente = derivada * erro;
+  neuronio->gradiente = derivada * erro;
 }
 
-/*void gradiente_neuronio(Neuronio *neuronio, Neuronio **camada, int i){
+
+void gradiente_neuronio(Neuronio *neuronio, Neuronio **camada_posterior, int i, int tam){
   double derivada = derivada_logistica(neuronio -> saida);
   double somatorio = 0;
 
-  for(){
-    somatorio += ;
+  for(int j=0; j<tam; j++){
+    Neuronio *neuronio = *(camada_posterior+j);
+    double *vetor = neuronio->w;
+    somatorio += (neuronio->gradiente) * (*(vetor+i));
   }
 
   neuronio -> gradiente = somatorio * derivada;
-}*/
+}
 
-//void ajuste_w(Neuronio *neuronio, double *w, double *p){
-   // neuronio -> (w+i) = neuronio -> (w+i) + TAXA_APRENDIZAGEM * (*p+i)/*saida do vetor anterior*/ * neuronio -> gradiente;
-//}
+
+void ajuste_w(Neuronio *neuronio, int tam_camada, Neuronio **camada_anterior ){
+  for (int i=0; i<tam_camada; i++){
+    Neuronio *anterior = *(camada_anterior+i);
+    *((neuronio->w)+i) = *((neuronio->w)+i) + (TAXA_APRENDIZAGEM) * (anterior->saida) * neuronio->gradiente ;
+  }
+}
+
+void ajuste_w_entrada(Neuronio *neuronio, int tam_camada, double *features ){
+  for (int i=0; i<tam_camada; i++){
+    *((neuronio->w)+i) = *((neuronio->w)+i) + (TAXA_APRENDIZAGEM) * (*(features+i)) * neuronio->gradiente ;
+  }
+}
+
 
 void ajuste_b(Neuronio *neuronio){
-    neuronio -> b = neuronio -> b + TAXA_APRENDIZAGEM * neuronio -> gradiente;
+    neuronio->b = neuronio->b + TAXA_APRENDIZAGEM *  (neuronio->gradiente);
 }
