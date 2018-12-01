@@ -30,6 +30,8 @@ void do_rede_neural(Neuronio **c_entrada, Neuronio **c_oculta, Neuronio **c_said
 Neuronio **do_camada(int tam_camada);
 double do_ciclo_treinamento(Neuronio **c_entrada, Neuronio **c_oculta, Neuronio **c_saida, Imagem *imagem, int qtd_neuronios_ocultos);
 
+double calcula_media_quadratica(double *vet, int tam);
+
 // Funcoes de aleatorizacao
 void do_features_random(Imagem **features_teste, Imagem **features_treinamento);
 void do_random(double *var, int semente);
@@ -72,9 +74,9 @@ int main(int argc, char *argv[]) {
     for (int i=0; i<50; i++){
       *(saidas+i) = do_ciclo_treinamento(camada_entrada, camada_oculta, camada_saida, *(features_treinamento+i), qtd_neuronios_ocultos);
     }
+    media_quadratica = calcula_media_quadratica(saidas, 50);
     count++;
-  }while(count<2);
-
+  }while(count<10);
 
   // Liberacao de memoria
   for (int i=0; i<50; i++){
@@ -110,6 +112,14 @@ int main(int argc, char *argv[]) {
   camada_saida = NULL;
 
   return 0;
+}
+
+double calcula_media_quadratica(double *vet, int tam){
+  double s = 0;
+  for(int i=0; i<tam; i++){
+    s += (*(vet+i)) * (*(vet+i));
+  }
+  return s/tam;
 }
 
 Neuronio **do_camada(int tam_camada){
