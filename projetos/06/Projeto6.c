@@ -3,216 +3,269 @@
 #include <time.h>
 #include <math.h>
 
+#define GRAMA 1
+#define ASFALTO 0
+#define TAXA_APRENDIZAGEM 1
+
 typedef struct neuronio{
-    // double p[536]; //Entrada
-    // double w[536]; //Núcleo
-    // double b;
-    double s; //Saida
-    struct neuronio **proxima;
+    double saida;
+    double *w;
+    double gradiente;
+    double b;
 }Neuronio;
 
-int get_parametro_linha_comando(int argc, char *argv[], int *param);
-int load_features(double **feature, char *url);
-void get_qtd_linhas_colunas(FILE *fp, int *linhas, int *colunas);
-void set_matriz_feature(FILE *arq, double **matriz_feature, int lin, int col);
-Neuronio *do_neuronio(double *p, double b);
-double calculo_saida_neuronio(double *p, double *w, double b);
-void do_vetor_random(double *vetor, int semente);
-double do_random(int semente);
-void set_proxima_camada(Neuronio **camada,int tam_camada, Neuronio **proxima_camada);
-double do_ciclo_neuronio(double *p_camada_entrada, int qtd_neuronios_ocultos);
+typedef struct imagem{
+  int identificador;
+  double *feature;
+}Imagem;
+
+// Funcoes de busca das features
+int get_parametro_linha_comando(int argc, char *argv[]);
+void load_features(Imagem **imagens_teste, Imagem **images_treinamento);
+void set_matriz_feature(FILE *arq, double **matriz_feature);
+
+// Funcoes de criacao
+void update_neuronio(Neuronio *neuronio, double *p);
+void do_rede_neural(Neuronio **c_entrada, Neuronio **c_oculta, Neuronio **c_saida, int qtd_neuronios_ocultos);
+Neuronio **do_camada(int tam_camada);
+double do_ciclo_treinamento(Neuronio **c_entrada, Neuronio **c_oculta, Neuronio **c_saida, double *p_entrada, int qtd_neuronios_ocultos);
+
+// Funcoes de aleatorizacao
+void do_features_random(Imagem **features_teste, Imagem **features_treinamento);
+void do_random(double *var, int semente);
+void do_vetor_random(double *vetor, int semente, int tam);
+void do_matriz_random(double **matriz, int semente, int linhas, int colunas);
+
+
+
 
 int main(int argc, char *argv[]) {
-  int qtd_neuronios_ocultos;
+  // Busca a quantidade de neuronios ocultos passados pela linha de comando pelo usuario
+  int qtd_neuronios_ocultos = get_parametro_linha_comando(argc, argv);
 
-  if (!get_parametro_linha_comando(argc, argv, &qtd_neuronios_ocultos)){
-    printf("A quantidade de neurônios na camada oculta deve ser definida via linha de comando\n" );
-    printf("Exemplo: $ ./nomedoexecutavel 10\n");
-    exit(1);
-  }
-  double **feature_asfalto, **feature_grama;
-
-  feature_grama = (double **)malloc(50*sizeof(double *));
+  Imagem **features_teste, **features_treinamento;
+  // Cria matrizes de imagens de teste e de treinamento
+  features_teste = (Imagem **)malloc(50*sizeof(Imagem *));
   for (int i=0; i<50; i++){
-    *(feature_grama+i) = (double *)malloc(536*sizeof(double));
+    *(features_teste+i) = (Imagem *)malloc(sizeof(Imagem));
   }
-  feature_asfalto = (double **)malloc(50*sizeof(double *));
+  features_treinamento = (Imagem **)malloc(50*sizeof(Imagem *));
   for (int i=0; i<50; i++){
-    *(feature_asfalto+i) = (double *)malloc(536*sizeof(double));
+    *(features_treinamento+i) = (Imagem *)malloc(sizeof(Imagem));
   }
 
-  if (load_features(feature_asfalto, "asfalto.txt")){
-    double *saidas = (double *)malloc(50*sizeof(double));
-    for (int count=0; count<50; count++){
-      *(saidas+count) = do_ciclo_neuronio(feature_asfalto[count], qtd_neuronios_ocultos);
-    }
-    for(int i=0; i<50; i++){
-      printf("s = %lf\n", *(saidas+i));
-    }
-    free(saidas);
-  }
-  if (load_features(feature_grama, "grama.txt")){
-    double *saidas = (double *)malloc(50*sizeof(double));
-    for (int count=0; count<50; count++){
-      *(saidas+count) = do_ciclo_neuronio(feature_grama[count], qtd_neuronios_ocultos);
-    }
-    for(int i=0; i<50; i++){
-      printf("s = %lf\n", *(saidas+i));
-    }
-    free(saidas);
-  }
+  // Carrega as matrizes com as features das imagens de teste e de treinamento
+  load_features(features_teste, features_treinamento);
+  // Aleatoriza as matrizes de features de teste e de treinamento
+  do_features_random(features_teste, features_treinamento);
 
-  // Liberacao de memória
+  Neuronio **camada_entrada = do_camada(536); // **
+  Neuronio **camada_oculta = do_camada(qtd_neuronios_ocultos); // **
+  Neuronio **camada_saida = do_camada(1); // **
+
+  do_rede_neural(camada_entrada, camada_oculta, camada_saida, qtd_neuronios_ocultos);
+
+  double *saidas = (double *)malloc(50*sizeof(double)); // **
+  int count = 0;
+  double media_quadratica = 0.5;
+  do{
+    for (int i=0; i<50; i++){
+      *(saidas+i) = do_ciclo_treinamento(camada_entrada, camada_oculta, camada_saida, (*(features_treinamento+i))->feature, qtd_neuronios_ocultos);
+    }
+    count++;
+  }while(count<2);
+
+
+  // Liberacao de memoria
   for (int i=0; i<50; i++){
-    free(*(feature_grama+i));
+    free((*(features_teste+i))->feature);
+    free(*(features_teste+i));
   }
+  free(features_teste);
   for (int i=0; i<50; i++){
-    free(*(feature_asfalto+i));
+    free((*(features_treinamento+i))->feature);
+    free(*(features_treinamento+i));
   }
-  free(feature_asfalto);
-  free(feature_grama);
+  free(features_treinamento);
 
   return 0;
 }
 
-double do_ciclo_neuronio(double *p_camada_entrada, int qtd_neuronios_ocultos){
-  Neuronio **camada_entrada, **camada_oculta, **camada_saida;
-
-  // Aloca dinamicamente uma matriz de neuronios, que será a camada de entrada
-  camada_entrada = (Neuronio **)malloc(536*sizeof(Neuronio *));
-  for (int i=0; i<536; i++){
-    *(camada_entrada+i) = (Neuronio *)malloc(sizeof(Neuronio));
-  }
-  // Aloca dinamicamente uma matriz de neuronios, que será a camada oculta
-  camada_oculta = (Neuronio **)malloc(qtd_neuronios_ocultos*sizeof(Neuronio *));
-  for (int i=0; i<qtd_neuronios_ocultos; i++){
-    *(camada_oculta+i) = (Neuronio *)malloc(sizeof(Neuronio));
-  }
-  // Aloca dinamicamente uma matriz de neuronios, que será a camada de saida
-  camada_saida = (Neuronio **)malloc(sizeof(Neuronio *));
-  for (int i=0; i<1; i++){
-    *(camada_saida+i) = (Neuronio *)malloc(sizeof(Neuronio));
-  }
-
-  double *b = (double *)malloc(536*sizeof(double));
-  do_vetor_random(b, 1);
-  // Cria todos os neuronios da camada de entrada
-  for (int i=0; i<536; i++){
-    *(camada_entrada+i) = do_neuronio(p_camada_entrada, *(b+i));
-  }
-
-  // Seta valores do vetor de entrada da camada oculta com base nas saidas
-  // dos neuronios da camada de entrada
-  double *p_camada_oculta = (double *)malloc(536*sizeof(double));
-  for (int i=0; i<536; i++){
-    *(p_camada_oculta+i) = (*(camada_entrada+i))->s;
-  }
-  do_vetor_random(b, 4);
-  // Cria todos os neuronios da camada oculta
-  for (int i=0; i<qtd_neuronios_ocultos; i++){
-    *(camada_oculta+i) = do_neuronio(p_camada_oculta, *(b+i));
-  }
-
-  // Seta valores do vetor de entrada da camada de saida com base nas saidas
-  // dos neuronios da camada oculta
-  double *p_camada_saida = (double *)malloc(536*sizeof(double));
-  for (int i=0; i<qtd_neuronios_ocultos; i++){
-    *(p_camada_saida+i) = (*(camada_oculta+i))->s;
-  }
-  do_vetor_random(b, 3);
-  // Cria todos os neuronios da camada de saida
-  for (int i=0; i<1; i++){
-    *(camada_saida+i) = do_neuronio(p_camada_saida, *(b+i));
-  }
-
-  // Aponta cada neuronio da camada de entrada para a camada oculta
-  set_proxima_camada(camada_entrada, 536, camada_oculta);
-  // Aponta cada neuronio da camada oculta para a camada de saida
-  set_proxima_camada(camada_oculta, qtd_neuronios_ocultos, camada_saida);
-
-  double saida = (*(camada_saida))->s;
-
-  //Liberacao de memória
-  free(b);
-  free(p_camada_oculta);
-  free(p_camada_saida);
-  for (int i=0; i<536; i++){
-    free(*(camada_entrada+i));
-  }
-  free(camada_entrada);
-  for (int i=0; i<qtd_neuronios_ocultos; i++){
-    free(*(camada_oculta+i));
-  }
-  free(camada_oculta);
-  for (int i=0; i<1; i++){
-    free(*(camada_saida+i));
-  }
-  free(camada_saida);
-  return saida;
-}
-
-void set_proxima_camada(Neuronio **camada,int tam_camada, Neuronio **proxima_camada){
+Neuronio **do_camada(int tam_camada){
+  Neuronio **nova_camada = (Neuronio **)malloc(tam_camada*sizeof(Neuronio *));
   for (int i=0; i<tam_camada; i++){
-    (*(camada+i))->proxima = proxima_camada;
+    *(nova_camada+i) = (Neuronio *)malloc(sizeof(Neuronio));
   }
+  return nova_camada;
 }
 
-void do_vetor_random(double *vetor, int semente){
-  srand(time(NULL)+semente);
+
+void do_rede_neural(Neuronio **c_entrada, Neuronio **c_oculta, Neuronio **c_saida, int qtd_neuronios_ocultos){
+
+  double *w_entrada = (double *)malloc(536*sizeof(double));
+  double b_entrada[536];
+  do_vetor_random(b_entrada, 1, 536);
+  do_vetor_random(w_entrada, 2, 536);
   for (int i=0; i<536; i++){
-    *(vetor+i) = (rand() % 31999) - 16000;
+    (*(c_entrada+i))->w = w_entrada;
+    (*(c_entrada+i))->b = b_entrada[i];
+  }
+
+  double *w_oculta = (double *)malloc(536*sizeof(double));
+  double b_oculta[qtd_neuronios_ocultos];
+  do_vetor_random(b_oculta, 1, qtd_neuronios_ocultos);
+  do_vetor_random(w_oculta, 2, 536);
+  for (int i=0; i<qtd_neuronios_ocultos; i++){
+    (*(c_oculta+i))->w = w_oculta;
+    (*(c_oculta+i))->b = b_oculta[i];
+  }
+
+  double *w_saida = (double *)malloc(qtd_neuronios_ocultos*sizeof(double));
+  double b_saida[qtd_neuronios_ocultos];
+  do_vetor_random(b_saida, 1, 1);
+  do_vetor_random(w_saida, 2, qtd_neuronios_ocultos);
+  for (int i=0; i<1; i++){
+    (*(c_saida+i))->w = w_saida;
+    (*(c_saida+i))->b = b_saida[i];
   }
 }
 
-Neuronio *do_neuronio(double *p, double b){
-  Neuronio *novo_neuronio = (Neuronio *)malloc(sizeof(Neuronio));
-
-  if (novo_neuronio == NULL){
-      printf("Erro na alocação!\n");
-      exit(1);
+double do_ciclo_treinamento(Neuronio **c_entrada, Neuronio **c_oculta, Neuronio **c_saida, double *p_entrada, int qtd_neuronios_ocultos){
+  // Calcula o s de todos os neuronios de entrada
+  for (int i=0; i<536; i++){
+    update_neuronio(*(c_entrada+i), p_entrada);
   }
-  double w[536], s;
-  do_vetor_random(w, 2);
 
-  s = calculo_saida_neuronio(p, w, b);
-  novo_neuronio->s = s;
-  novo_neuronio->proxima = NULL;
-  return novo_neuronio;
+  double p_oculta[536];
+  for (int i=0; i<536; i++){
+    p_oculta[i] = (*(c_entrada+i))->saida;
+  }
+  for (int i=0; i<qtd_neuronios_ocultos; i++){
+    update_neuronio(*(c_oculta+i), p_oculta);
+  }
+
+  double p_saida[qtd_neuronios_ocultos];
+  for (int i=0; i<qtd_neuronios_ocultos; i++){
+    p_saida[i] = (*(c_oculta+i))->saida;
+  }
+  for (int i=0; i<1; i++){
+    update_neuronio(*(c_saida+i), p_saida);
+  }
+
+  return (*(c_saida))->saida;
 }
 
-double calculo_saida_neuronio(double *p, double *w, double b){
-  double somatorio = 0;
-  double n, s;
+
+void update_neuronio(Neuronio *neuronio, double *p){
+  double n, somatorio = 0;
 
   for(int i=0; i<536; i++){
-    somatorio += (*(w+i)) * (*(p+i));
+    somatorio += (*((neuronio->w)+i)) * (*(p+i));
   }
-  n = somatorio + b;
-  s = 1 / (1 + exp(-n));
-  return s;
+  n = somatorio + neuronio->b;
+  neuronio->saida = 1 / (1 + exp(-n));
 }
 
-int load_features(double **feature, char *url){
+
+int get_parametro_linha_comando(int argc, char *argv[]){
+  if (argc == 1){
+    printf("A quantidade de neurônios na camada oculta deve ser definida via linha de comando\n" );
+    printf("Exemplo: $ ./nomedoexecutavel 10\n");
+    exit(1);
+  }else{
+    return atoi(argv[1]);
+  }
+}
+
+
+void load_features(Imagem **imagens_teste, Imagem **imagens_treinamento){
   int linhas, colunas;
   FILE *arq;
+  double **features_asfalto, **features_grama;
 
-  arq = fopen(url, "r");
+  features_grama = (double **)malloc(50*sizeof(double *));
+  for (int i=0; i<50; i++){
+    *(features_grama+i) = (double *)malloc(536*sizeof(double));
+  }
+  features_asfalto = (double **)malloc(50*sizeof(double *));
+  for (int i=0; i<50; i++){
+    *(features_asfalto+i) = (double *)malloc(536*sizeof(double));
+  }
+
+  arq = fopen("asfalto.txt", "r");
   if (arq == NULL){
     printf("Não foi possível abrir o arquivo!\n" );
-    return 0;
+    exit(1);
   }else{
-    get_qtd_linhas_colunas(arq, &linhas, &colunas);
-    set_matriz_feature(arq ,feature, linhas, colunas);
-    return 1;
+    set_matriz_feature(arq ,features_asfalto);
   }
   fclose(arq);
+
+  arq = fopen("grama.txt", "r");
+  if (arq == NULL){
+    printf("Não foi possível abrir o arquivo!\n" );
+    exit(1);
+  }else{
+    set_matriz_feature(arq ,features_grama);
+  }
+  fclose(arq);
+  // Cria 25 imagens de grama para a feature de teste
+  for (int i=0; i<25; i++) {
+    Imagem *nova_imagem = (Imagem *)malloc(sizeof(Imagem));
+    nova_imagem->feature = (double *)malloc(536*sizeof(double));
+    for(int j=0; j<536; j++){
+      *(nova_imagem->feature+j) = (*(*(features_grama+i)+j));
+    }
+    nova_imagem->identificador = GRAMA;
+    *(imagens_teste+i) = nova_imagem;
+  }
+  // Cria 25 imagens de asfalto para a feature de teste
+  for (int i=0; i<25; i++) {
+    Imagem *nova_imagem = (Imagem *)malloc(sizeof(Imagem));
+    nova_imagem->feature = (double *)malloc(536*sizeof(double));
+    for(int j=0; j<536; j++){
+      *(nova_imagem->feature+j) = (*(*(features_asfalto+i)+j));
+    }
+    nova_imagem->identificador = ASFALTO;
+    *(imagens_teste+i+25) = nova_imagem;
+  }
+  // Cria 25 imagens de grama para a feature de treinamento
+  for (int i=0; i<25; i++) {
+    Imagem *nova_imagem = (Imagem *)malloc(sizeof(Imagem));
+    nova_imagem->feature = (double *)malloc(536*sizeof(double));
+    for(int j=0; j<536; j++){
+      *(nova_imagem->feature+j) = (*(*(features_grama+i+25)+j));
+    }
+    nova_imagem->identificador = GRAMA;
+    *(imagens_treinamento+i) = nova_imagem;
+  }
+  // Cria 25 imagens de asfalto para a feature de treinamento
+  for (int i=0; i<25; i++) {
+    Imagem *nova_imagem = (Imagem *)malloc(sizeof(Imagem));
+    nova_imagem->feature = (double *)malloc(536*sizeof(double));
+    for(int j=0; j<536; j++){
+      *(nova_imagem->feature+j) = (*(*(features_asfalto+i+25)+j));
+    }
+    nova_imagem->identificador = ASFALTO;
+    *(imagens_treinamento+i+25) = nova_imagem;
+  }
+
+  for (int i=0; i<50; i++){
+    free(*(features_grama+i));
+  }
+  for (int i=0; i<50; i++){
+    free(*(features_asfalto+i));
+  }
+  free(features_grama);
+  free(features_asfalto);
 }
 
-void set_matriz_feature(FILE *arq, double **matriz_feature, int lin, int col){
+
+void set_matriz_feature(FILE *arq, double **matriz_feature){
   char pv;
   rewind(arq);
-  for (int i = 0; i < lin; i++) {
-    for (int j = 0; j < col; j++) {
+  for (int i = 0; i < 50; i++) {
+    for (int j = 0; j < 536; j++) {
       if (!feof(arq)) {
         fscanf(arq, "%lf%c", *(matriz_feature+i)+j, &pv);
       }
@@ -220,24 +273,56 @@ void set_matriz_feature(FILE *arq, double **matriz_feature, int lin, int col){
   }
 }
 
-void get_qtd_linhas_colunas(FILE *fp, int *linhas, int *colunas){
-	char marcador;
-	*linhas = 0, *colunas = 1;
-	while ((marcador = fgetc(fp)) != EOF) {
-		if (marcador == '\n') {
-			*linhas = *linhas + 1;
-		}
-		else if (*linhas == 0 && marcador == ' ') {
-			*colunas = *colunas + 1;
-		}
-	}
+
+void do_features_random(Imagem **features_teste, Imagem **features_treinamento){
+  srand(time(NULL));
+  // Aleatoriza as imagens de teste
+  for (int i = 0; i < 50; i++) {
+    Imagem *aux = *(features_teste+i);
+    int random = rand() % 50;
+    *(features_teste+i) = *(features_teste+random);
+    *(features_teste+random) = aux;
+  }
+  // Aleatoriza as imagens de treinamento
+  for (int i = 0; i < 50; i++) {
+    Imagem *aux = *(features_treinamento+i);
+    int random = rand() % 50;
+    *(features_treinamento+i) = *(features_treinamento+random);
+    *(features_treinamento+random) = aux;
+  }
+
+  printf("\nOrdem do vetor de testes: \n");
+  for(int i=0; i<50; i++){
+    printf("%d ", (*(features_teste+i))->identificador);
+  }
+  printf("\n-----------------------\n\n");
+  printf("Ordem do vetor de treinamento: \n");
+  for(int i=0; i<50; i++){
+    printf("%d ", (*(features_treinamento+i))->identificador);
+  }
+  printf("\n-----------------------\n");
 }
 
-int get_parametro_linha_comando(int argc, char *argv[], int *param){
-  if (argc == 1){
-    return 0;
-  }else{
-    *param = atoi(argv[1]);
-    return 1;
+
+void do_random(double *var, int semente){
+  srand(time(NULL)+semente);
+  *var = (rand() % 31999) - 16000;
+}
+
+
+void do_vetor_random(double *vetor, int semente, int tam){
+  srand(time(NULL)+semente);
+  for (int i=0; i<tam; i++){
+    *(vetor+i) = (rand() % 31999) - 16000;
+  }
+}
+
+
+void do_matriz_random(double **matriz, int semente, int linhas, int colunas){
+  srand(time(NULL)+semente);
+  for(int i=0; i<linhas; i++){
+    for(int j=0; j<colunas; j++){
+      *(*(matriz+i)+j) = (rand() % 31999) - 16000;
+    }
   }
 }
