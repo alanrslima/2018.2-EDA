@@ -38,7 +38,12 @@ void do_random(double *var, int semente);
 void do_vetor_random(double *vetor, int semente, int tam);
 void do_matriz_random(double **matriz, int semente, int linhas, int colunas);
 
-
+// Funcoes BP
+double derivada_logistica(double s);
+void gradiente_saida(Neuronio *neuronio, double erro);
+void gradiente_neuronio(Neuronio *neuronio, Neuronio **camada, int i);
+void ajuste_w(Neuronio *neuronio, double *w, double *p);
+void ajuste_b(Neuronio *neuronio);
 
 
 int main(int argc, char *argv[]) {
@@ -186,6 +191,14 @@ double do_ciclo_treinamento(Neuronio **c_entrada, Neuronio **c_oculta, Neuronio 
   }
 
   double erro = imagem->identificador - (*(c_saida))->saida;
+
+  // Inicio do BP
+  gradiente_saida(*(c_saida), erro);
+
+  for(int i = 0; i < qtd_neuronios_ocultos; i++){
+    gradiente_neuronio(*(c_oculta+i), c_saida, i);
+  }
+
 
   return erro;
 }
@@ -360,4 +373,36 @@ void do_matriz_random(double **matriz, int semente, int linhas, int colunas){
       *(*(matriz+i)+j) = (rand() % 31999) - 16000;
     }
   }
+}
+
+double derivada_logistica(double s){
+  double derivada;
+
+  derivada = -((exp(s)) / pow(exp(s) - 1, 2));
+
+  return derivada;
+}
+
+void gradiente_saida(Neuronio *neuronio, double erro){
+  double derivada = derivada_logistica(neuronio -> saida);
+  neuronio -> gradiente = derivada * erro;
+}
+
+/*void gradiente_neuronio(Neuronio *neuronio, Neuronio **camada, int i){
+  double derivada = derivada_logistica(neuronio -> saida);
+  double somatorio = 0;
+
+  for(){
+    somatorio += ;
+  }
+
+  neuronio -> gradiente = somatorio * derivada;
+}*/
+
+//void ajuste_w(Neuronio *neuronio, double *w, double *p){
+   // neuronio -> (w+i) = neuronio -> (w+i) + TAXA_APRENDIZAGEM * (*p+i)/*saida do vetor anterior*/ * neuronio -> gradiente;
+//}
+
+void ajuste_b(Neuronio *neuronio){
+    neuronio -> b = neuronio -> b + TAXA_APRENDIZAGEM * neuronio -> gradiente;
 }
